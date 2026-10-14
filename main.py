@@ -13,9 +13,9 @@ st.write("Carica le dispense in PDF e inserisci i dati per generare l'analisi.")
 api_key = st.secrets.get("OPENAI_API_KEY") or os.environ.get("OPENAI_API_KEY")
 
 if not api_key:
-st.warning("⚠️ Inserisci la chiave API di OpenAI nei segreti di Streamlit o nelle variabili d'ambiente.")
+  st.warning("⚠️ Inserisci la chiave API di OpenAI nei segreti di Streamlit o nelle variabili d'ambiente.")
 else:
-client = OpenAI(api_key=api_key)
+  client = OpenAI(api_key=api_key)
 
 # Sezione per il caricamento dei file PDF delle dispense
 uploaded_pdf = st.file_uploader("Carica una dispensa in PDF", type=["pdf"])
