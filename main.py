@@ -15,7 +15,7 @@ def check_password():
     password_input = st.text_input("Inserisci la password per accedere all'app:", type="password")
     
     if st.button("Accedi"):
-        if password_input == "numerologia2026":  # Puoi cambiare questa password come preferisci
+        if password_input == "numerologia2026":
             st.session_state["password_correct"] = True
             st.rerun()
         else:
@@ -53,10 +53,24 @@ if check_password():
         if user_input:
             with st.spinner("Generazione in corso..."):
                 try:
-                    prompt = f"Agisci come un esperto numerologo. Usa queste informazioni di riferimento dalle dispense:\n{pdf_text}\n\nGenera un'analisi numerologica per: {user_input}"
+                    prompt = f"""
+Sei un esperto numerologo e matematico rigoroso.
+
+USA LE SEGUENTI DISPENSE COME UNICA FONTE DI RIFERIMENTO E REGOLE DI CALCOLO:
+{pdf_text}
+
+ISTRUZIONI PER L'ANALISI:
+1. Identifica chiaramente nome, cognome e data di nascita dai dati forniti dall'utente: {user_input}.
+2. Esegui i calcoli numerologici segnale nelle dispense applicando scrupolosamente le somme e le conversioni specificate.
+3. MOSTRA SEMPRE IL CALCOLO PASSO PASSO (es. somma delle singole cifre della data di nascita, riduzione a cifra singola o numero maestro).
+4. Fornisci l'interpretazione completa e dettagliata per ciascun numero calcolato, basandoti unicamente sul testo delle dispense caricate.
+
+Inizia fornendo prima la sezione "📐 CALCOLI PASSO PASSO" e poi la sezione "🔮 INTERPRETAZIONE NUMEROLOGICA".
+"""
                     response = client.chat.completions.create(
                         model="gpt-3.5-turbo",
-                        messages=[{"role": "user", "content": prompt}]
+                        messages=[{"role": "user", "content": prompt}],
+                        temperature=0.2  # Bassa creatività per garantire massima accuratezza nei calcoli
                     )
                     st.subheader("Risultato dell'Analisi")
                     st.write(response.choices[0].message.content)
