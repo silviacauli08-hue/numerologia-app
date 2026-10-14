@@ -7,9 +7,9 @@ from pypdf import PdfReader
 st.set_page_config(page_title="App di Numerologia", layout="centered")
 
 st.title("🔢 Applicazione di Numerologia con OpenAI")
-st.write("Carica le dispense in PDF e inserisci i dati per generare il profilo numerologico.")
+st.write("Carica le dispense in PDF e inserisci i dati per generare l'analisi.")
 
-# Inizializzazione del client OpenAI (legge la chiave dalle variabili d'ambiente o dai secrets)
+# Inizializzazione del client OpenAI (legge la chiave dai segreti o dalle variabili d'ambiente)
 api_key = st.secrets.get("OPENAI_API_KEY") or os.environ.get("OPENAI_API_KEY")
 
 if not api_key:
@@ -28,38 +28,27 @@ for page in reader.pages:
 text = page.extract_text()
 if text:
 pdf_text += text + "\n"
-st.success(f"PDF caricato con successo! Estratte {len(reader.pages)} pagine.")
+st.success("PDF caricato ed estratto con successo!")
 except Exception as e:
-st.error(f"Errore durante la lettura del PDF: {e}")
+st.error(f"Errore nella lettura del PDF: {e}")
 
 # Input utente per la numerologia
 user_input = st.text_input("Inserisci nome, cognome e data di nascita:")
 
-if st.button("Genera Profilo Numerologico"):
-if not api_key:
-st.error("Configura la chiave API di OpenAI per procedere.")
-elif not user_input:
-st.warning("Inserisci i dati richiesti prima di generare il profilo.")
-else:
-with st.spinner("Elaborazione in corso..."):
-prompt = f"""
-Agisci come un esperto numerologo. Utilizzando le informazioni estratte dalla dispensa (se presenti)
-e i dati forniti dall'utente ({user_input}), elabora un profilo numerologico dettagliato.
-
-Contenuto della dispensa di riferimento:
-{pdf_text[:3000]}
-"""
-
+if st.button("Genera Analisi") and api_key:
+if user_input:
+with st.spinner("Generazione in corso..."):
 try:
+prompt = f"Agisci come un esperto numerologo. Usa queste informazioni di riferimento dalle dispense:\n{pdf_text}\n\nGenera un'analisi numerologica per: {user_input}"
+
 response = client.chat.completions.create(
 model="gpt-3.5-turbo",
-messages=[
-{"role": "system", "content": "Sei un assistente esperto in numerologia."},
-{"role": "user", "content": prompt}
-]
+messages=[{"role": "user", "content": prompt}]
 )
-result = response.choices[0].message.content
-st.subheader("Risultato del Profilo Numerologico:")
-st.write(result)
+
+st.subheader("Risultato dell'Analisi")
+st.write(response.choices[0].message.content)
 except Exception as e:
-st.error(f"Errore nella comunicazione con OpenAI: {e}")
+st.error(f"Si è verificato un errore con OpenAI: {e}")
+else:
+st.warning("Per favore inserisci i dati prima di procedere.")
