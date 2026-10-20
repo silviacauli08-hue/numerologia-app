@@ -38,24 +38,19 @@ TABELLA_PITAGORICA = {
 VOCALI_BASE = set(['a', 'e', 'i', 'o', 'u'])
 
 def riduci(n):
-    """Riduzione teosofica fino a singola cifra o numero maestro."""
     while n > 9 and n not in [11, 22, 33, 44]:
         n = sum(int(c) for c in str(n))
     return n
 
 def calcola_nome_cognome(testo):
     testo_clean = testo.lower()
-    
     vocali_trovate = []
     consonanti_trovate = []
     
     for char in testo_clean:
         if char in TABELLA_PITAGORICA:
             val = TABELLA_PITAGORICA[char]
-            if char in VOCALI_BASE:
-                vocali_trovate.append((char.upper(), val))
-            elif char == 'y':
-                # Regola Y: se non ci sono altre vocali è vocale, altrimenti consonante
+            if char in VOCALI_BASE or char == 'y':
                 vocali_trovate.append((char.upper(), val))
             else:
                 consonanti_trovate.append((char.upper(), val))
@@ -74,20 +69,12 @@ def calcola_nome_cognome(testo):
 
 def calcola_data_nascita(g, m, a):
     g, m, a = int(g), int(m), int(a)
-    
-    # Destino: Giorno + Mese + Anno
     dest_tot = g + m + a
     dest_rid = riduci(dest_tot)
-    
-    # Sole / Forza
     sole_tot = g + m
     sole_rid = riduci(sole_tot)
-    
-    # Origine (somma cifre anno)
     origine_tot = sum(int(c) for c in str(a))
     origine_rid = riduci(origine_tot)
-    
-    # Dono (ultime due cifre anno)
     dono_tot = int(str(a)[-2:])
     dono_rid = riduci(dono_tot)
     
@@ -95,13 +82,13 @@ def calcola_data_nascita(g, m, a):
         "dest_tot": dest_tot, "dest_rid": dest_rid,
         "approdo": g,
         "sole_tot": sole_tot, "sole_rid": sole_rid,
-        "origine_tot": origine_tot, "origine_rid": origine_rid,
-        "dono_tot": dono_tot, "dono_rid": dono_rid
+        "origine_rid": origine_rid,
+        "dono_rid": dono_rid
     }
 
 if check_password():
-    st.title("🔢 Mappa Numerologica Precisione Matematica")
-    st.write("Calcolo nativo Python della Scuola Numerica con interpretazione AI da PDF.")
+    st.title("🔢 Mappa Numerologica Armoniosa")
+    st.write("Genera un profilo numerologico narrativo, fluido e dettagliato basato sulla tua dispensa.")
 
     api_key = st.secrets.get("OPENAI_API_KEY") or os.environ.get("OPENAI_API_KEY")
 
@@ -130,66 +117,56 @@ if check_password():
     with col2:
         data_nascita = st.text_input("Data di Nascita (GG/MM/AAAA):", value="15/08/1973")
 
-    if st.button("Genera Analisi Esatta") and api_key:
+    if st.button("Genera Profilo Armonioso") and api_key:
         if nome_cognome and data_nascita:
-            with st.spinner("Calcolo matematico rigoroso in corso..."):
+            with st.spinner("Stesura del profilo narrativo in corso..."):
                 try:
                     res_nc = calcola_nome_cognome(nome_cognome)
-                    
                     p = data_nascita.split("/")
                     res_d = calcola_data_nascita(p[0], p[1], p[2])
                     
-                    # Quintessenza
                     q_tot = res_nc["io_tot"] + res_d["dest_tot"]
                     q_rid = riduci(q_tot)
                     
-                    # Stringa con tutti i conteggi lettera per lettera
-                    str_vocali = " + ".join([f"{char}({v})" for char, v in res_nc["vocali_dettaglio"]])
-                    str_cons = " + ".join([f"{char}({v})" for char, v in res_nc["consonanti_dettaglio"]])
-                    
                     report_matematico = f"""
-📐 **CALCOLI MATEMATICI ESATTI (Python)**:
-- **Nome e Cognome**: {nome_cognome}
-- **Data di nascita**: {data_nascita}
-
-1. **Numero dell'Anima (Vocali)**: {str_vocali} = {res_nc['anima_tot']} → **{res_nc['anima_rid']}** ({res_nc['anima_tot']}/{res_nc['anima_rid']})
-2. **Numero della Persona (Consonanti)**: {str_cons} = {res_nc['persona_tot']} → **{res_nc['persona_rid']}** ({res_nc['persona_tot']}/{res_nc['persona_rid']})
-3. **Numero dell'Io (Espressione)**: {res_nc['anima_tot']} + {res_nc['persona_tot']} = {res_nc['io_tot']} → **{res_nc['io_rid']}** ({res_nc['io_tot']}/{res_nc['io_rid']})
-4. **Numero del Destino**: {p[0]} + {p[1]} + {p[2]} = {res_d['dest_tot']} → **{res_d['dest_rid']}** ({res_d['dest_tot']}/{res_d['dest_rid']})
-5. **Numero di Approdo (Giorno)**: **{res_d['approdo']}**
-6. **Numero del Sole / Forza**: {p[0]} + {p[1]} = {res_d['sole_tot']} → **{res_d['sole_rid']}** (Innesto a {res_d['sole_tot']} anni)
-7. **Numero dell'Origine**: {res_d['origine_tot']} → **{res_d['origine_rid']}**
-8. **Numero del Dono**: {res_d['dono_tot']} → **{res_d['dono_rid']}**
-9. **Numero della Quintessenza**: {res_nc['io_tot']} + {res_d['dest_tot']} = {q_tot} → **{q_rid}**
+DATI MATEMATICI DI RIFERIMENTO:
+- Profilo: {nome_cognome} ({data_nascita})
+- Numero dell'Anima: {res_nc['anima_tot']}/{res_nc['anima_rid']}
+- Numero della Persona: {res_nc['persona_tot']}/{res_nc['persona_rid']}
+- Numero dell'Io (Espressione): {res_nc['io_tot']}/{res_nc['io_rid']}
+- Numero del Destino: {res_d['dest_tot']}/{res_d['dest_rid']}
+- Approdo (Giorno): {res_d['approdo']}
+- Sole / Forza: {res_d['sole_tot']}/{res_d['sole_rid']} (Innesto a {res_d['sole_tot']} anni)
+- Origine: {res_d['origine_rid']} | Dono: {res_d['dono_rid']}
+- Quintessenza: {q_tot}/{q_rid}
 """
 
-                    st.markdown("### 📊 Risultato dei Calcoli Matematici")
-                    st.info(report_matematico)
-
-                    # Invio all'IA per l'interpretazione basata sul PDF
+                    # Prompt orientato alla narrazione fluida, armoniosa e letteraria
                     prompt = f"""
-Sei un esperto Maestro Numerologo della Scuola Numerica.
-Usa ESCLUSIVAMENTE la seguente dispensa per interpretare i significati, gli archetipi, le luci e le ombre dei numeri.
+Sei un Maestro Numerologo raffinato e saggio, fedele agli insegnamenti della Scuola Numerica presenti nella dispensa allegata.
+Usa i dati matematici esatti forniti di seguito e attingi integralmente ai testi del PDF per tessere un racconto e un'analisi fluida, profonda, ispirazionale e discorsiva.
 
-UTILIZZA QUESTI NUMERI ESATTI CALCOLATI DAL SISTEMA:
 {report_matematico}
 
-DISPENSA PDF:
+DISPENSA DI RIFERIMENTO:
 {pdf_text}
 
-ISTRUZIONI PER L'INTERPRETAZIONE:
-1. Riporta in cima la sezione dei calcoli sopra fornita.
-2. Descrivi la **Croce Cardinale Numerologica** (Destino, Io, Persona, Anima, Quintessenza).
-3. Fornisci l'**Interpretazione Dettagliata dell'Opera Alchemica** per ciascun numero emerso usando i testi della dispensa.
+ISTRUZIONI DI STILE:
+- Evita elenchi puntati aridi o schemi freddi. Scrivi con un tono caldo, accogliente, letterario e armonioso, come una vera e propria opera di auto-conoscenza e consulenza interiore.
+- Struttura l'analisi in capitoli discorsivi:
+  1. 🌅 **L'Ingresso nel Viaggio e l'Approdo**: Un'introduzione evocativa che unisce la data di nascita e il giorno di approdo.
+  2. 🎶 **La Sinfonia del Nome: Anima, Persona e Io**: Racconta come l'Anima (i desideri del cuore), la Persona (lo scudo protettore e l'impressione esterna) e l'Io (i mezzi d'azione nella materia) dialogano e si fondono.
+  3. 🌱 **Il Cammino dei Talenti e delle Sfide**: Descrivi il Destino, il Sole/Forza, l'Origine e il Dono come tappe di un'evoluzione alchemica (il passaggio dal piombo all'oro).
+  4. 🔮 **La Quintessenza e la Croce Cardinale**: Concludi descrivendo il punto di equilibrio centrale, la centratura e la missione dell'anima.
 """
 
                     response = client.chat.completions.create(
                         model="gpt-4o-mini",
                         messages=[{"role": "user", "content": prompt}],
-                        temperature=0.2
+                        temperature=0.4 # Leggermente più alta per dare morbidezza e fluidità letteraria alla narrazione
                     )
 
-                    st.subheader("🔮 Interpretazione Numerologica Dettagliata")
+                    st.subheader("📖 Profilo Numerologico Armonioso e Dettagliato")
                     st.markdown(response.choices[0].message.content)
 
                 except Exception as e:
