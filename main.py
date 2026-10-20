@@ -23,8 +23,8 @@ def check_password():
     return False
 
 if check_password():
-    st.title("🔢 Applicazione di Numerologia con OpenAI")
-    st.write("Carica le dispense in PDF e inserisci i dati per generare l'analisi.")
+    st.title("🔢 Mappa Numerologica Completa")
+    st.write("Carica la dispensa unica e inserisci i dati anagrafici per elaborare il tema numerologico.")
 
     api_key = st.secrets.get("OPENAI_API_KEY") or os.environ.get("OPENAI_API_KEY")
 
@@ -33,7 +33,7 @@ if check_password():
     else:
         client = OpenAI(api_key=api_key)
 
-    uploaded_pdf = st.file_uploader("Carica una dispensa in PDF", type=["pdf"])
+    uploaded_pdf = st.file_uploader("Carica la dispensa completa in PDF", type=["pdf"])
 
     pdf_text = ""
     if uploaded_pdf is not None:
@@ -47,33 +47,58 @@ if check_password():
         except Exception as e:
             st.error(f"Errore nella lettura del PDF: {e}")
 
-    user_input = st.text_input("Inserisci nome, cognome e data di nascita:")
+    user_input = st.text_input("Inserisci Nome, Cognome e Data di Nascita (es. Silvia Cauli 15/08/1973):")
 
-    if st.button("Genera Analisi") and api_key:
+    if st.button("Genera Mappa Completa") and api_key:
         if user_input:
-            with st.spinner("Generazione in corso..."):
+            with st.spinner("Elaborazione della Mappa Numerologica in corso..."):
                 try:
                     prompt = f"""
-Sei un esperto numerologo e matematico rigoroso.
+Sei un esperto Maestro Numerologo specializzato nella metodologia della "Scuola Numerica".
+Usa la seguente dispensa completa come UNICA FONTE DI RIFERIMENTO per la tabella di conversione (Guematria/Pitagorica), le regole matematiche di calcolo, la riduzione teosofica e le interpretazioni filosofiche/alchemiche:
 
-USA LE SEGUENTI DISPENSE COME UNICA FONTE DI RIFERIMENTO E REGOLE DI CALCOLO:
+--- INIZIO DISPENSA DI RIFERIMENTO ---
 {pdf_text}
+--- FINE DISPENSA DI RIFERIMENTO ---
 
-ISTRUZIONI PER L'ANALISI:
-1. Identifica chiaramente nome, cognome e data di nascita dai dati forniti dall'utente: {user_input}.
-2. Esegui i calcoli numerologici segnale nelle dispense applicando scrupolosamente le somme e le conversioni specificate.
-3. MOSTRA SEMPRE IL CALCOLO PASSO PASSO (es. somma delle singole cifre della data di nascita, riduzione a cifra singola o numero maestro).
-4. Fornisci l'interpretazione completa e dettagliata per ciascun numero calcolato, basandoti unicamente sul testo delle dispense caricate.
+Dati dell'utente: {user_input}
 
-Inizia fornendo prima la sezione "📐 CALCOLI PASSO PASSO" e poi la sezione "🔮 INTERPRETAZIONE NUMEROLOGICA".
+Genera un prospetto e un'analisi numerologica completa e rigorosa strutturata ESATTAMENTE nei seguenti capitoli:
+
+1. 📐 CALCOLI PASSO PASSO E DERIVAZIONI
+   - Mostra la traslitterazione delle lettere in numeri seguendo la tabella pitagorea.
+   - Mostra la separazione delle Vocali (Anima) e delle Consonanti (Persona) ed eventualmente le eccezioni della lettera Y.
+   - Mostra i conteggi completi di:
+     * Numero dell'Anima (A)
+     * Numero della Persona (P)
+     * Numero dell'Io / Espressione (I)
+     * Numero del Destino (D) (somma giorno + mese + anno prima della riduzione)
+     * Numero della Quintessenza (Q) (somma Io + Destino prima della riduzione)
+     * Approdo (giorno di nascita esatto, non ridotto)
+     * Numero del Sole / Forza (giorno + mese) e stima dell'Innesto (età anagrafica di svolta)
+     * Numero dell'Origine (O) e Numero del Dono (D) dall'anno di nascita
+     * Numeri dell'Ombra: Sotto-sfida Infanzia, Sotto-sfida Maturità e Sfida Principale (mediante sottrazioni)
+     * Rilevazione dei Numeri Maestri (11, 22, 33, 44) e Karmici (13, 14, 16, 19) presenti nei calcoli intermedi.
+
+2. ✝️ CROCE CARDINALE NUMEROLOGICA
+   - Sintetizza i 5 numeri cardinali (Destino, Io, Persona, Anima, Quintessenza) con le loro derivazioni (es. 28/10/1) e descrivi il loro flusso dinamico dal piano concreto allo spirituale, ponendo la Quintessenza al centro come equilibratore.
+
+3. 📊 GRIGLIA DI AUSTIN COATES & PIANO F.E.M.S.
+   - Evidenzia gli Archetipi Dominanti (AD) (numeri più ripetuti) e le Lezioni Karmiche (LK) (numeri assenti).
+   - Compila la tabella F.E.M.S. (Fisico, Emotivo, Mentale, Spirituale) contando la frequenza delle lettere/numeri dal nome e cognome e associa la dominanza degli Elementi della Natura (Terra, Acqua, Aria, Fuoco).
+
+4. 🔮 INTERPRETAZIONE Dettagliata & OPERA ALCHEMICA SU DI SÉ
+   - Per ciascun numero calcolato e per le relative sfide/punti di forza, fornisci un'interpretazione profonda basata integralmente sui testi della dispensa (Luci, Ombre, Archetipi correlati, trasformazione dal Piombo all'Oro).
+
+Sii estremamente preciso nei passaggi matematici per evitare errori di somma!
 """
                     response = client.chat.completions.create(
-                        model="gpt-3.5-turbo",
+                        model="gpt-4o-mini",
                         messages=[{"role": "user", "content": prompt}],
-                        temperature=0.2  # Bassa creatività per garantire massima accuratezza nei calcoli
+                        temperature=0.2
                     )
-                    st.subheader("Risultato dell'Analisi")
-                    st.write(response.choices[0].message.content)
+                    st.subheader("📜 Risultato del Tema Numerologico")
+                    st.markdown(response.choices[0].message.content)
                 except Exception as e:
                     st.error(f"Si è verificato un errore con OpenAI: {e}")
         else:
