@@ -3,7 +3,19 @@ import streamlit as st
 from openai import OpenAI
 from pypdf import PdfReader
 
+# Configurazione pagina
 st.set_page_config(page_title="App di Numerologia", layout="centered")
+
+# Blocca la traduzione automatica errata del browser
+st.markdown("""
+    <html lang="it" class="notranslate">
+    <head><meta name="google" content="notranslate" /></head>
+    <style>
+        .element-container, .stMarkdown, p, h1, h2, h3 {
+            font-family: 'Georgia', serif;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
 def check_password():
     if "password_correct" not in st.session_state:
@@ -101,8 +113,8 @@ def calcola_data_nascita(g, m, a):
     }
 
 if check_password():
-    st.title("🔢 Mappa Numerologica Armoniosa")
-    st.write("Genera il profilo numerologico completo con lingua italiana fluida e impeccabile.")
+    st.title("✨ Mappa Numerologica Evolutiva")
+    st.write("Analisi narrativa profonda basata sulla Scuola Numerica.")
 
     api_key = st.secrets.get("OPENAI_API_KEY") or os.environ.get("OPENAI_API_KEY")
 
@@ -131,9 +143,9 @@ if check_password():
     with col2:
         data_nascita = st.text_input("Data di Nascita (GG/MM/AAAA):", value="15/08/1973")
 
-    if st.button("Genera Analisi Corretta") and api_key:
+    if st.button("Genera Analisi Approfondita") and api_key:
         if nome_cognome and data_nascita:
-            with st.spinner("Stesura dell'analisi in corso..."):
+            with st.spinner("Stesura del profilo numerologico in corso..."):
                 try:
                     res_nc = calcola_nome_cognome(nome_cognome)
                     p = data_nascita.split("/")
@@ -142,41 +154,59 @@ if check_password():
                     q_tot = res_nc["io_tot"] + res_d["dest_tot"]
                     q_rid = riduci(q_tot)
                     
+                    # 1. MOSTRA QUADRO SINTETICO DEI RISULTATI
+                    st.markdown("---")
+                    st.subheader("📊 Mappa dei Numeri Fondamentali")
+                    c1, c2, c3, c4, c5 = st.columns(5)
+                    c1.metric("Anima (A)", f"{res_nc['anima_tot']}/{res_nc['anima_rid']}")
+                    c2.metric("Persona (P)", f"{res_nc['persona_tot']}/{res_nc['persona_rid']}")
+                    c3.metric("Io (I)", f"{res_nc['io_tot']}/{res_nc['io_rid']}")
+                    c4.metric("Destino (D)", f"{res_d['dest_tot']}/{res_d['dest_rid']}")
+                    c5.metric("Quintessenza (Q)", f"{q_tot}/{q_rid}")
+                    
+                    st.write(f"**Approdo (Giorno)**: {res_d['approdo']} | **Sole/Forza**: {res_d['sole_tot']}/{res_d['sole_rid']} (Innesto: {res_d['sole_tot']} anni) | **Origine**: {res_d['origine_rid']} | **Dono**: {res_d['dono_rid']}")
+                    st.write(f"**Sfide**: Infanzia {res_d['sfida_infanzia']} | Maturità {res_d['sfida_maturita']} | **Principale**: {res_d['sfida_principale']}")
+                    st.markdown("---")
+
                     report_matematico = f"""
-DATI NUMERICI ESATTI CALCOLATI DAL SISTEMA:
-- Persona: {nome_cognome} (Data: {data_nascita})
-- Numero dell'Anima: {res_nc['anima_tot']}/{res_nc['anima_rid']}[cite: 3]
-- Numero della Persona: {res_nc['persona_tot']}/{res_nc['persona_rid']}[cite: 3]
-- Numero dell'Io (Espressione): {res_nc['io_tot']}/{res_nc['io_rid']}[cite: 3]
-- Numero del Destino: {res_d['dest_tot']}/{res_d['dest_rid']}[cite: 3]
-- Approdo (Giorno): {res_d['approdo']}[cite: 3]
-- Sole / Forza: {res_d['sole_tot']}/{res_d['sole_rid']} (Innesto a {res_d['sole_tot']} anni)[cite: 3]
-- Origine: {res_d['origine_rid']} | Dono: {res_d['dono_rid']}[cite: 3]
-- Quintessenza: {q_tot}/{q_rid}[cite: 3]
-- Sotto-sfida Infanzia: {res_d['sfida_infanzia']}[cite: 3]
-- Sotto-sfida Maturità: {res_d['sfida_maturita']}[cite: 3]
-- Sfida Principale (Ombra): {res_d['sfida_principale']}[cite: 3]
+DATI NUMERICI ESATTI:
+- Soggetto: {nome_cognome} ({data_nascita})
+- Anima: {res_nc['anima_tot']}/{res_nc['anima_rid']}
+- Persona: {res_nc['persona_tot']}/{res_nc['persona_rid']}
+- Io / Espressione: {res_nc['io_tot']}/{res_nc['io_rid']}
+- Destino / Cammino: {res_d['dest_tot']}/{res_d['dest_rid']}
+- Approdo: {res_d['approdo']}
+- Sole / Forza: {res_d['sole_tot']}/{res_d['sole_rid']} (Innesto: {res_d['sole_tot']} anni)
+- Origine: {res_d['origine_rid']} | Dono: {res_d['dono_rid']}
+- Quintessenza: {q_tot}/{q_rid}
+- Sotto-sfida Infanzia: {res_d['sfida_infanzia']}
+- Sotto-sfida Maturità: {res_d['sfida_maturita']}
+- Sfida Principale: {res_d['sfida_principale']}
 """
 
                     prompt = f"""
-Sei un Maestro Numerologo esperto e saggio della Scuola Numerica.
-Scrivi un'analisi e un profilo numerologico in LINGUA ITALIANA CORRETTA, ELEGANTE, FLUIDA E PRIVA DI ERRORE ALCUNO.
+Sei un Maestro Numerologo raffinato, colto e profondamente empatico della Scuola Numerica.
+Scrivi un'analisi narrativa fluida, armoniosa e dettagliata in LINGUA ITALIANA IMPECCABILE.
 
-USA TASSATIVAMENTE I SEGUENTI VALORI NUMERICI:
+USO DEI DATI:
 {report_matematico}
 
 DISPENSA DI RIFERIMENTO:
 {pdf_text}
 
-ISTRUZIONI DI STILE RIGIDE:
-1. Usa solo ed esclusivamente la lingua italiana con grammatica e sintassi perfette. Non inventare termini o parole sgrammaticate.
-2. Evita elenchi freddi o tabelle grezze. Scrivi paragrafi ampi, caldi, poetici ed empatici.
-3. Articola la trattazione nei seguenti capitoli:
-   - 🌅 **L'Ingresso nel Viaggio e l'Approdo**: Presenta l'Anima incarnata ({nome_cognome}), la data di nascita ({data_nascita}) e il giorno di approdo ({res_d['approdo']}).
-   - 🎶 **La Sinfonia del Nome: Anima, Persona e Io**: Spiega il dialogo alchemico tra Anima ({res_nc['anima_tot']}/{res_nc['anima_rid']}), Persona ({res_nc['persona_tot']}/{res_nc['persona_rid']}) e Io ({res_nc['io_tot']}/{res_nc['io_rid']}).
-   - 🌱 **Il Cammino dei Talenti**: Narra il percorso del Destino ({res_d['dest_tot']}/{res_d['dest_rid']}), del Sole/Forza ({res_d['sole_tot']}/{res_d['sole_rid']}) con il momento di Innesto a {res_d['sole_tot']} anni, dell'Origine e del Dono.
-   - 🌑 **Il Cammino delle Sfide e dell'Ombra**: Spiega la Sotto-sfida d'infanzia ({res_d['sfida_infanzia']}), quella di maturità ({res_d['sfida_maturita']}) e la Sfida Principale ({res_d['sfida_principale']}) come trampolini evolutivi e "seme del proprio superamento".
-   - 🔮 **La Quintessenza e la Croce Cardinale**: Concludi con la Quintessenza ({q_tot}/{q_rid}) e il significato di sintesi della Croce Cardinale.
+ISTRUZIONI DI CONTENUTO E STILE:
+1. Scrivi esclusivamente in italiano perfetto, elegante e scorrevole.
+2. Evita elenchi freddi. Per ciascuna sezione sviluppa un testo organico che analizzi:
+   - **Il Dono e la Luce** dell'archetipo
+   - **L'Ombra e la Sfida** (l'automatismo da riconoscere)
+   - **La Trasmutazione Alchemica** (il consiglio di crescita evolutiva)
+
+STRUTTURA CAPITOLI:
+- 🌅 **L'Ingresso nel Viaggio e l'Approdo**: Introduzione sull'incarnazione ({nome_cognome}), data ({data_nascita}) e giorno di Approdo ({res_d['approdo']}).
+- 🎶 **La Sinfonia del Nome: Anima, Persona e Io**: L'Anelito dell'Anima ({res_nc['anima_tot']}/{res_nc['anima_rid']}), lo Scudo della Persona ({res_nc['persona_tot']}/{res_nc['persona_rid']}) e l'Espressione dell'Io ({res_nc['io_tot']}/{res_nc['io_rid']}).
+- 🌱 **Il Cammino dei Talenti**: Il Destino ({res_d['dest_tot']}/{res_d['dest_rid']}), la Forza del Sole ({res_d['sole_tot']}/{res_d['sole_rid']}) con la svolta dell'Innesto a {res_d['sole_tot']} anni, l'Origine e il Dono.
+- 🌑 **Il Cammino delle Sfide e dell'Ombra**: Trasmutazione della Sotto-sfida d'infanzia ({res_d['sfida_infanzia']}), di maturità ({res_d['sfida_maturita']}) e della Sfida Principale ({res_d['sfida_principale']}) come "seme del proprio superamento".
+- 🔮 **La Quintessenza e la Croce Cardinale**: Sintesi del centro d'equilibrio ({q_tot}/{q_rid}) e compimento della missione dell'Anima.
 """
 
                     response = client.chat.completions.create(
@@ -185,7 +215,7 @@ ISTRUZIONI DI STILE RIGIDE:
                         temperature=0.2
                     )
 
-                    st.subheader("📖 Profilo Numerologico Armonioso")
+                    st.subheader("📖 Profilo Numerologico Narrativo ed Evolutivo")
                     st.markdown(response.choices[0].message.content)
 
                 except Exception as e:
