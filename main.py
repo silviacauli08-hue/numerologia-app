@@ -42,6 +42,12 @@ def riduci(n):
         n = sum(int(c) for c in str(n))
     return n
 
+def riduci_singola(n):
+    """Riduce sempre a una cifra singola (1-9) per il calcolo delle sfide."""
+    while n > 9:
+        n = sum(int(c) for c in str(n))
+    return n
+
 def calcola_nome_cognome(testo):
     testo_clean = testo.lower()
     vocali_trovate = []
@@ -78,17 +84,34 @@ def calcola_data_nascita(g, m, a):
     dono_tot = int(str(a)[-2:])
     dono_rid = riduci(dono_tot)
     
+    # Calcolo Sfide (secondo la regola: M, G, A ridotti a cifra singola)
+    m_s = riduci_singola(m)
+    g_s = riduci_singola(g)
+    
+    # Anno ridotto a singola cifra per la sfida
+    a_s = riduci_singola(sum(int(c) for c in str(a)))
+    
+    # Sotto-sfida Infanzia/Giovinezza = |Giorno - Anno|
+    sfida_infanzia = abs(g_s - a_s)
+    # Sotto-sfida Maturità = |Mese - Giorno|
+    sfida_maturita = abs(m_s - g_s)
+    # Sfida Principale = |Sfida Maturità - Sfida Infanzia|
+    sfida_principale = abs(sfida_maturita - sfida_infanzia)
+    
     return {
         "dest_tot": dest_tot, "dest_rid": dest_rid,
         "approdo": g,
         "sole_tot": sole_tot, "sole_rid": sole_rid,
         "origine_rid": origine_rid,
-        "dono_rid": dono_rid
+        "dono_rid": dono_rid,
+        "sfida_infanzia": sfida_infanzia,
+        "sfida_maturita": sfida_maturita,
+        "sfida_principale": sfida_principale
     }
 
 if check_password():
-    st.title("🔢 Mappa Numerologica Armoniosa")
-    st.write("Genera un profilo numerologico narrativo, fluido e dettagliato basato sulla tua dispensa.")
+    st.title("🔢 Mappa Numerologica Armoniosa con Sfide")
+    st.write("Genera il profilo numerologico completo, fluido e dettagliato con l'integrazione del Cammino delle Sfide.")
 
     api_key = st.secrets.get("OPENAI_API_KEY") or os.environ.get("OPENAI_API_KEY")
 
@@ -117,9 +140,9 @@ if check_password():
     with col2:
         data_nascita = st.text_input("Data di Nascita (GG/MM/AAAA):", value="15/08/1973")
 
-    if st.button("Genera Profilo Armonioso") and api_key:
+    if st.button("Genera Profilo Completo di Sfide") and api_key:
         if nome_cognome and data_nascita:
-            with st.spinner("Stesura del profilo narrativo in corso..."):
+            with st.spinner("Stesura del profilo armonioso con le sfide in corso..."):
                 try:
                     res_nc = calcola_nome_cognome(nome_cognome)
                     p = data_nascita.split("/")
@@ -131,42 +154,46 @@ if check_password():
                     report_matematico = f"""
 DATI MATEMATICI DI RIFERIMENTO:
 - Profilo: {nome_cognome} ({data_nascita})
-- Numero dell'Anima: {res_nc['anima_tot']}/{res_nc['anima_rid']}
-- Numero della Persona: {res_nc['persona_tot']}/{res_nc['persona_rid']}
-- Numero dell'Io (Espressione): {res_nc['io_tot']}/{res_nc['io_rid']}
-- Numero del Destino: {res_d['dest_tot']}/{res_d['dest_rid']}
-- Approdo (Giorno): {res_d['approdo']}
-- Sole / Forza: {res_d['sole_tot']}/{res_d['sole_rid']} (Innesto a {res_d['sole_tot']} anni)
-- Origine: {res_d['origine_rid']} | Dono: {res_d['dono_rid']}
-- Quintessenza: {q_tot}/{q_rid}
+- Numero dell'Anima: {res_nc['anima_tot']}/{res_nc['anima_rid']}[cite: 3]
+- Numero della Persona: {res_nc['persona_tot']}/{res_nc['persona_rid']}[cite: 3]
+- Numero dell'Io (Espressione): {res_nc['io_tot']}/{res_nc['io_rid']}[cite: 3]
+- Numero del Destino: {res_d['dest_tot']}/{res_d['dest_rid']}[cite: 3]
+- Approdo (Giorno): {res_d['approdo']}[cite: 3]
+- Sole / Forza: {res_d['sole_tot']}/{res_d['sole_rid']} (Innesto a {res_d['sole_tot']} anni)[cite: 3]
+- Origine: {res_d['origine_rid']} | Dono: {res_d['dono_rid']}[cite: 3]
+- Quintessenza: {q_tot}/{q_rid}[cite: 3]
+- **Sotto-sfida Infanzia/Giovinezza**: {res_d['sfida_infanzia']}[cite: 3]
+- **Sotto-sfida Maturità**: {res_d['sfida_maturita']}[cite: 3]
+- **Sfida Principale (Ombra)**: {res_d['sfida_principale']}[cite: 3]
 """
 
-                    # Prompt orientato alla narrazione fluida, armoniosa e letteraria
+                    # Prompt esteso con la sezione dedicata alle Sfide e all'Ombra
                     prompt = f"""
-Sei un Maestro Numerologo raffinato e saggio, fedele agli insegnamenti della Scuola Numerica presenti nella dispensa allegata.
-Usa i dati matematici esatti forniti di seguito e attingi integralmente ai testi del PDF per tessere un racconto e un'analisi fluida, profonda, ispirazionale e discorsiva.
+Sei un Maestro Numerologo raffinato e saggio, fedele agli insegnamenti della Scuola Numerica presenti nella dispensa allegata[cite: 3].
+Usa i dati matematici esatti forniti di seguito e attingi integralmente ai testi del PDF per tessere un racconto e un'analisi fluida, profonda, ispirazionale e discorsiva che includa anche il Cammino delle Sfide[cite: 3].
 
 {report_matematico}
 
 DISPENSA DI RIFERIMENTO:
 {pdf_text}
 
-ISTRUZIONI DI STILE:
+ISTRUZIONI DI STILE E CONTENUTO:
 - Evita elenchi puntati aridi o schemi freddi. Scrivi con un tono caldo, accogliente, letterario e armonioso, come una vera e propria opera di auto-conoscenza e consulenza interiore.
 - Struttura l'analisi in capitoli discorsivi:
-  1. 🌅 **L'Ingresso nel Viaggio e l'Approdo**: Un'introduzione evocativa che unisce la data di nascita e il giorno di approdo.
-  2. 🎶 **La Sinfonia del Nome: Anima, Persona e Io**: Racconta come l'Anima (i desideri del cuore), la Persona (lo scudo protettore e l'impressione esterna) e l'Io (i mezzi d'azione nella materia) dialogano e si fondono.
-  3. 🌱 **Il Cammino dei Talenti e delle Sfide**: Descrivi il Destino, il Sole/Forza, l'Origine e il Dono come tappe di un'evoluzione alchemica (il passaggio dal piombo all'oro).
-  4. 🔮 **La Quintessenza e la Croce Cardinale**: Concludi descrivendo il punto di equilibrio centrale, la centratura e la missione dell'anima.
+  1. 🌅 **L'Ingresso nel Viaggio e l'Approdo**: Un'introduzione evocativa che unisce la data di nascita e il giorno di approdo[cite: 3].
+  2. 🎶 **La Sinfonia del Nome: Anima, Persona e Io**: Racconta come l'Anima (i desideri del cuore), la Persona (lo scudo protettore) e l'Io (i mezzi d'azione) dialogano e si fondono[cite: 3].
+  3. 🌱 **Il Cammino dei Talenti**: Descrivi il Destino, il Sole/Forza, l'Origine e il Dono come tappe di un'evoluzione alchemica (il passaggio dal piombo all'oro)[cite: 3].
+  4. 🌑 **Il Cammino delle Sfide e dell'Ombra**: Integra la Sotto-sfida d'infanzia, quella di maturità e la Sfida Principale[cite: 3]. Spiegale rigorosamente in chiave evolutiva, non come condizionamenti subiti o sfortuna, ma come il "seme del proprio superamento", i punti di maggiore stress da accogliere, comprendere e trasmutare nella propria forza più grande[cite: 3].
+  5. 🔮 **La Quintessenza e la Croce Cardinale**: Concludi descrivendo il punto di equilibrio centrale, la centratura e la missione dell'anima[cite: 3].
 """
 
                     response = client.chat.completions.create(
                         model="gpt-4o-mini",
                         messages=[{"role": "user", "content": prompt}],
-                        temperature=0.4 # Leggermente più alta per dare morbidezza e fluidità letteraria alla narrazione
+                        temperature=0.4
                     )
 
-                    st.subheader("📖 Profilo Numerologico Armonioso e Dettagliato")
+                    st.subheader("📖 Profilo Numerologico Completo di Talenti e Sfide")
                     st.markdown(response.choices[0].message.content)
 
                 except Exception as e:
