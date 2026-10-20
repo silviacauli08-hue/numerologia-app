@@ -6,7 +6,7 @@ from pypdf import PdfReader
 # Configurazione pagina
 st.set_page_config(page_title="App di Numerologia", layout="centered")
 
-# Blocca la traduzione automatica errata del browser
+# Impedisce traduzioni automatiche alterate dal browser
 st.markdown("""
     <html lang="it" class="notranslate">
     <head><meta name="google" content="notranslate" /></head>
@@ -114,7 +114,7 @@ def calcola_data_nascita(g, m, a):
 
 if check_password():
     st.title("✨ Mappa Numerologica Evolutiva")
-    st.write("Analisi narrativa profonda basata sulla Scuola Numerica.")
+    st.write("Analisi narrativa profonda e pratica basata sulla Scuola Numerica.")
 
     api_key = st.secrets.get("OPENAI_API_KEY") or os.environ.get("OPENAI_API_KEY")
 
@@ -145,7 +145,7 @@ if check_password():
 
     if st.button("Genera Analisi Approfondita") and api_key:
         if nome_cognome and data_nascita:
-            with st.spinner("Stesura del profilo numerologico in corso..."):
+            with st.spinner("Elaborazione del profilo in corso..."):
                 try:
                     res_nc = calcola_nome_cognome(nome_cognome)
                     p = data_nascita.split("/")
@@ -171,22 +171,22 @@ if check_password():
                     report_matematico = f"""
 DATI NUMERICI ESATTI:
 - Soggetto: {nome_cognome} ({data_nascita})
-- Anima: {res_nc['anima_tot']}/{res_nc['anima_rid']}
-- Persona: {res_nc['persona_tot']}/{res_nc['persona_rid']}
-- Io / Espressione: {res_nc['io_tot']}/{res_nc['io_rid']}
-- Destino / Cammino: {res_d['dest_tot']}/{res_d['dest_rid']}
-- Approdo: {res_d['approdo']}
-- Sole / Forza: {res_d['sole_tot']}/{res_d['sole_rid']} (Innesto: {res_d['sole_tot']} anni)
-- Origine: {res_d['origine_rid']} | Dono: {res_d['dono_rid']}
-- Quintessenza: {q_tot}/{q_rid}
-- Sotto-sfida Infanzia: {res_d['sfida_infanzia']}
-- Sotto-sfida Maturità: {res_d['sfida_maturita']}
-- Sfida Principale: {res_d['sfida_principale']}
+- Anima: {res_nc['anima_tot']}/{res_nc['anima_rid']}[cite: 3]
+- Persona: {res_nc['persona_tot']}/{res_nc['persona_rid']}[cite: 3]
+- Io / Espressione: {res_nc['io_tot']}/{res_nc['io_rid']}[cite: 3]
+- Destino / Cammino: {res_d['dest_tot']}/{res_d['dest_rid']}[cite: 3]
+- Approdo: {res_d['approdo']}[cite: 3]
+- Sole / Forza: {res_d['sole_tot']}/{res_d['sole_rid']} (Innesto: {res_d['sole_tot']} anni)[cite: 3]
+- Origine: {res_d['origine_rid']} | Dono: {res_d['dono_rid']}[cite: 3]
+- Sotto-sfida Infanzia: {res_d['sfida_infanzia']}[cite: 3]
+- Sotto-sfida Maturità: {res_d['sfida_maturita']}[cite: 3]
+- Sfida Principale: {res_d['sfida_principale']}[cite: 3]
+- Quintessenza: {q_tot}/{q_rid}[cite: 3]
 """
 
                     prompt = f"""
 Sei un Maestro Numerologo raffinato, colto e profondamente empatico della Scuola Numerica.
-Scrivi un'analisi narrativa fluida, armoniosa e dettagliata in LINGUA ITALIANA IMPECCABILE.
+Scrivi un'analisi narrativa fluida, armoniosa, dettagliata e orientata anche alle applicazioni pratiche e professionali in LINGUA ITALIANA IMPECCABILE.
 
 USO DEI DATI:
 {report_matematico}
@@ -195,18 +195,16 @@ DISPENSA DI RIFERIMENTO:
 {pdf_text}
 
 ISTRUZIONI DI CONTENUTO E STILE:
-1. Scrivi esclusivamente in italiano perfetto, elegante e scorrevole.
-2. Evita elenchi freddi. Per ciascuna sezione sviluppa un testo organico che analizzi:
-   - **Il Dono e la Luce** dell'archetipo
-   - **L'Ombra e la Sfida** (l'automatismo da riconoscere)
-   - **La Trasmutazione Alchemica** (il consiglio di crescita evolutiva)
+1. Scrivi esclusivamente in italiano perfetto, elegante e scorrevole. Non ripetere mai parole o sillabe in modo anomalo.
+2. Evita elenchi puntati o tabelle fredde. Sviluppa testi organici discorsivi.
+3. **Importante**: Quando tratti l'Io (i mezzi d'azione) e il Destino (il cammino di vita), approfondisci concretamente **che cosa la persona è portata a fare nella vita pratica e professionale** in base a quei numeri (es. se c'è il 4, attitudini per metodo, organizzazione, contabilità o tecnica; se c'è l'8, leadership, gestione o impresa; se c'è il 2, mediazione e lavoro con le persone; se c'è l'1, pionierismo o autonomia; ecc., attingendo dai significati della dispensa)[cite: 3].
 
 STRUTTURA CAPITOLI:
-- 🌅 **L'Ingresso nel Viaggio e l'Approdo**: Introduzione sull'incarnazione ({nome_cognome}), data ({data_nascita}) e giorno di Approdo ({res_d['approdo']}).
-- 🎶 **La Sinfonia del Nome: Anima, Persona e Io**: L'Anelito dell'Anima ({res_nc['anima_tot']}/{res_nc['anima_rid']}), lo Scudo della Persona ({res_nc['persona_tot']}/{res_nc['persona_rid']}) e l'Espressione dell'Io ({res_nc['io_tot']}/{res_nc['io_rid']}).
-- 🌱 **Il Cammino dei Talenti**: Il Destino ({res_d['dest_tot']}/{res_d['dest_rid']}), la Forza del Sole ({res_d['sole_tot']}/{res_d['sole_rid']}) con la svolta dell'Innesto a {res_d['sole_tot']} anni, l'Origine e il Dono.
-- 🌑 **Il Cammino delle Sfide e dell'Ombra**: Trasmutazione della Sotto-sfida d'infanzia ({res_d['sfida_infanzia']}), di maturità ({res_d['sfida_maturita']}) e della Sfida Principale ({res_d['sfida_principale']}) come "seme del proprio superamento".
-- 🔮 **La Quintessenza e la Croce Cardinale**: Sintesi del centro d'equilibrio ({q_tot}/{q_rid}) e compimento della missione dell'Anima.
+- 🌅 **L'Ingresso nel Viaggio e l'Approdo**: Introduzione sull'incarnazione ({nome_cognome}), data ({data_nascita}) e significato del giorno di Approdo ({res_d['approdo']})[cite: 3].
+- 🎶 **La Sinfonia del Nome: Anima, Persona e Io**: L'Anelito dell'Anima ({res_nc['anima_tot']}/{res_nc['anima_rid']}), lo Scudo della Persona ({res_nc['persona_tot']}/{res_nc['persona_rid']}) e i mezzi d'azione concreti e professionali dell'Io ({res_nc['io_tot']}/{res_nc['io_rid']})[cite: 3].
+- 🌱 **Il Cammino dei Talenti**: Il Destino ({res_d['dest_tot']}/{res_d['dest_rid']}) con le sue inclinazioni di percorso e sbocchi pratici, la Forza del Sole ({res_d['sole_tot']}/{res_d['sole_rid']}) con la svolta dell'Innesto a {res_d['sole_tot']} anni, l'Origine e il Dono[cite: 3].
+- 🌑 **Il Cammino delle Sfide e dell'Ombra**: Trasmutazione della Sotto-sfida d'infanzia ({res_d['sfida_infanzia']}), di maturità ({res_d['sfida_maturita']}) e della Sfida Principale ({res_d['sfida_principale']}) viste come "seme del proprio superamento"[cite: 3].
+- 🔮 **La Quintessenza e la Croce Cardinale**: Sintesi del centro d'equilibrio ({q_tot}/{q_rid}) e compimento della missione dell'Anima[cite: 3].
 """
 
                     response = client.chat.completions.create(
