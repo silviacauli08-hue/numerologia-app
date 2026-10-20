@@ -1,10 +1,12 @@
 import os
+import io
 import streamlit as st
 from openai import OpenAI
 from pypdf import PdfReader
+from docx import Document
 
 # Configurazione pagina
-st.set_page_config(page_title="App di Numerologia", layout="centered")
+st.set_page_config(page_title="App di Numerologia Evolutiva", layout="centered")
 
 # Impedisce traduzioni automatiche alterate dal browser
 st.markdown("""
@@ -112,9 +114,27 @@ def calcola_data_nascita(g, m, a):
         "sfida_principale": sfida_principale
     }
 
+def crea_documento_word(nome_soggetto, dati_sintesi, testo_analisi):
+    doc = Document()
+    doc.add_heading(f"Mappa Numerologica Evolutiva", level=1)
+    doc.add_heading(f"Profilo di: {nome_soggetto}", level=2)
+    
+    doc.add_heading("Quadro Numerico", level=3)
+    for riga in dati_sintesi.split("\n"):
+        if riga.strip():
+            doc.add_paragraph(riga)
+            
+    doc.add_heading("Analisi Dettagliata", level=3)
+    doc.add_paragraph(testo_analisi)
+    
+    file_stream = io.BytesIO()
+    doc.save(file_stream)
+    file_stream.seek(0)
+    return file_stream
+
 if check_password():
     st.title("✨ Mappa Numerologica Evolutiva")
-    st.write("Analisi narrativa profonda, pratica e orientata ai piani dell'essere.")
+    st.write("Analisi narrativa profonda, orientata alla professione, ai piani dell'essere e con esportazione in Word.")
 
     api_key = st.secrets.get("OPENAI_API_KEY") or os.environ.get("OPENAI_API_KEY")
 
@@ -145,7 +165,7 @@ if check_password():
 
     if st.button("Genera Analisi Approfondita") and api_key:
         if nome_cognome and data_nascita:
-            with st.spinner("Elaborazione del profilo e dei piani dell'essere in corso..."):
+            with st.spinner("Elaborazione del profilo e preparazione del file in corso..."):
                 try:
                     res_nc = calcola_nome_cognome(nome_cognome)
                     p = data_nascita.split("/")
@@ -171,28 +191,28 @@ if check_password():
                     report_matematico = f"""
 DATI NUMERICI ESATTI:
 - Soggetto: {nome_cognome} ({data_nascita})
-- Anima: {res_nc['anima_tot']}/{res_nc['anima_rid']}[cite: 3]
-- Persona: {res_nc['persona_tot']}/{res_nc['persona_rid']}[cite: 3]
-- Io / Espressione: {res_nc['io_tot']}/{res_nc['io_rid']}[cite: 3]
-- Destino / Cammino: {res_d['dest_tot']}/{res_d['dest_rid']}[cite: 3]
-- Approdo: {res_d['approdo']}[cite: 3]
-- Sole / Forza: {res_d['sole_tot']}/{res_d['sole_rid']} (Innesto: {res_d['sole_tot']} anni)[cite: 3]
-- Origine: {res_d['origine_rid']} | Dono: {res_d['dono_rid']}[cite: 3]
-- Sotto-sfida Infanzia: {res_d['sfida_infanzia']}[cite: 3]
-- Sotto-sfida Maturità: {res_d['sfida_maturita']}[cite: 3]
-- Sfida Principale: {res_d['sfida_principale']}[cite: 3]
-- Quintessenza: {q_tot}/{q_rid}[cite: 3]
+- Anima: {res_nc['anima_tot']}/{res_nc['anima_rid']}
+- Persona: {res_nc['persona_tot']}/{res_nc['persona_rid']}
+- Io / Espressione: {res_nc['io_tot']}/{res_nc['io_rid']}
+- Destino / Cammino: {res_d['dest_tot']}/{res_d['dest_rid']}
+- Approdo: {res_d['approdo']}
+- Sole / Forza: {res_d['sole_tot']}/{res_d['sole_rid']} (Innesto: {res_d['sole_tot']} anni)
+- Origine: {res_d['origine_rid']} | Dono: {res_d['dono_rid']}
+- Sotto-sfida Infanzia: {res_d['sfida_infanzia']}
+- Sotto-sfida Maturità: {res_d['sfida_maturita']}
+- Sfida Principale: {res_d['sfida_principale']}
+- Quintessenza: {q_tot}/{q_rid}
 """
 
                     prompt = f"""
 Sei un Maestro Numerologo saggio, colto e raffinato della Scuola Numerica. 
-Scrivi un profilo numerologico narrativo approfondito, fluido ed elegante in LINGUA ITALIANA CORRETTA E IMPECCABILE. 
+Scrivi un profilo numerologico narrativo molto ampio, ricco, fluido ed elegante in LINGUA ITALIANA CORRETTA E IMPECCABILE. 
 
 REGOLE DI SCRITTURA RIGIDE:
-1. Scrivi esclusivamente in italiano perfetto, curando meticolosamente la grammatica, la sintassi e la punteggiatura. Evita nel modo più assoluto parole ripetute, tronche o frasi sgrammaticate.
-2. Niente elenchi puntati freddi: usa paragrafi discorsivi, caldi, empatici e di alto profilo letterario.
-3. Collega rigorosamente i numeri alle **inclinazioni pratiche e professionali** (es. cosa spinge a fare l'Io o il Destino a seconda del numero: organizzazione, tecnica, relazioni, leadership, impresa, cura della persona, ecc.)[cite: 3].
-4. Inserisci un capitolo specifico dedicato ai **Piani dell'Essere (F.E.M.S.) e agli Elementi della Natura** (Fisico/Terra, Emotivo/Acqua, Mentale/Aria, Spirituale/Fuoco) basandoti sugli insegnamenti della dispensa[cite: 3].
+1. CURA DELLA LINGUA: Scrivi esclusivamente in italiano formale e corretto. Evita in modo assoluto termini errati come "pianoforte" (usa esclusivamente "piano fisico", "piano emotivo", "piano mentale", "piano spirituale"). Non duplicare mai parole o sillabe.
+2. AMPIEZZA DESCRITTIVA: Crea sezioni ampie, avvolgenti e dettagliate, senza elenchi puntati freddi. 
+3. INCLINAZIONI PRATICHE E PROFESSIONALI: Spiega in modo approfondito ed esteso **cosa la persona è portata a fare nella vita pratica e professionale** in base ai suoi numeri chiave (in particolare per il Destino e l'Io), collegando l'energia del numero a sbocchi concreti (es. gestione, organizzazione e metodo per il 4; leadership o impresa per l'8; relazioni, empatia e mediazione per il 2; altruismo, educazione o sociale per il 9; ecc.).
+4. PIANI DELL'ESSERE: Inserisci un capitolo dedicato ai **Piani dell'Essere e agli Elementi (F.E.M.S.)** spiegando con precisione la distribuzione e l'influenza dei piani fisico, emotivo, mentale e spirituale.
 
 DATI DI RIFERIMENTO:
 {report_matematico}
@@ -201,12 +221,12 @@ DISPENSA DI RIFERIMENTO:
 {pdf_text}
 
 STRUTTURA DEI CAPITOLI RICHIESTA:
-- 🌅 **L'Ingresso nel Viaggio e l'Approdo**: Riflessione sull'incarnazione di {nome_cognome} ({data_nascita}) e sul significato profondo del giorno di Approdo ({res_d['approdo']})[cite: 3].
-- 🎶 **La Sinfonia del Nome: Anima, Persona e Io**: L'Anelito dell'Anima ({res_nc['anima_tot']}/{res_nc['anima_rid']}), lo Scudo della Persona ({res_nc['persona_tot']}/{res_nc['persona_rid']}) e i mezzi d'azione operativi e professionali dell'Io ({res_nc['io_tot']}/{res_nc['io_rid']})[cite: 3].
-- 🌱 **Il Cammino dei Talenti**: Il Destino ({res_d['dest_tot']}/{res_d['dest_rid']}) con i suoi sbocchi pratici, la Forza del Sole ({res_d['sole_tot']}/{res_d['sole_rid']}) con l'Innesto a {res_d['sole_tot']} anni, l'Origine e il Dono[cite: 3].
-- 🌿 **I Piani dell'Essere e gli Elementi (F.E.M.S.)**: Analisi delle prevalenze tra piano Fisico (Terra), Emotivo (Acqua), Mentale (Aria) e Spirituale (Fuoco) nella struttura del nome[cite: 3].
-- 🌑 **Il Cammino delle Sfide e dell'Ombra**: L'elaborazione alchemica della Sotto-sfida d'infanzia ({res_d['sfida_infanzia']}), di maturità ({res_d['sfida_maturita']}) e della Sfida Principale ({res_d['sfida_principale']}) viste come "seme del proprio superamento"[cite: 3].
-- 🔮 **La Quintessenza e la Croce Cardinale**: Sintesi del centro d'equilibrio ({q_tot}/{q_rid}) e compimento della missione dell'Anima[cite: 3].
+- 🌅 **L'Ingresso nel Viaggio e l'Approdo**: Ampia riflessione sull'incarnazione di {nome_cognome} ({data_nascita}) e sul profondo significato alchemico del giorno di Approdo ({res_d['approdo']}).
+- 🎶 **La Sinfonia del Nome: Anima, Persona e Io**: Analisi estesa del desiderio del cuore (Anima: {res_nc['anima_tot']}/{res_nc['anima_rid']}), dello scudo relazionale (Persona: {res_nc['persona_tot']}/{res_nc['persona_rid']}) e dei talenti operativi e professionali messi in campo dall'Io ({res_nc['io_tot']}/{res_nc['io_rid']}).
+- 🌱 **Il Cammino dei Talenti e della Professione**: Trattazione ampia e dettagliata del Destino ({res_d['dest_tot']}/{res_d['dest_rid']}), esaminando approfonditamente le inclinazioni pratiche, le vocazioni lavorative e i contesti in cui la persona esprime al meglio il proprio potenziale. Approfondisci anche la Forza del Sole ({res_d['sole_tot']}/{res_d['sole_rid']}) con l'Innesto a {res_d['sole_tot']} anni, l'Origine e il Dono.
+- 🌿 **I Piani dell'Essere e gli Elementi (F.E.M.S.)**: Trattazione dedicata dei piani energetici (Fisico/Terra, Emotivo/Acqua, Mentale/Aria, Spirituale/Fuoco) presenti nella struttura del nome.
+- 🌑 **Il Cammino delle Sfide e dell'Ombra**: Analisi evolutiva della Sotto-sfida d'infanzia ({res_d['sfida_infanzia']}), di maturità ({res_d['sfida_maturita']}) e della Sfida Principale ({res_d['sfida_principale']}), viste come il "seme del proprio superamento".
+- 🔮 **La Quintessenza e la Croce Cardinale**: Conclusione ampia e poetica incentrata sul centro d'equilibrio ({q_tot}/{q_rid}) e sul compimento della missione dell'Anima.
 """
 
                     response = client.chat.completions.create(
@@ -215,8 +235,23 @@ STRUTTURA DEI CAPITOLI RICHIESTA:
                         temperature=0.2
                     )
 
+                    testo_generato = response.choices[0].message.content
+
                     st.subheader("📖 Profilo Numerologico Narrativo ed Evolutivo")
-                    st.markdown(response.choices[0].message.content)
+                    st.markdown(testo_generato)
+
+                    # --- AGGIUNTA DEL PULSANTE DI DOWNLOAD WORD ---
+                    st.markdown("---")
+                    st.subheader("💾 Esporta la Mappa")
+                    
+                    docx_file = crea_documento_word(nome_cognome, report_matematico, testo_generato)
+                    
+                    st.download_button(
+                        label="📥 Scarica Mappa in formato Word (.docx)",
+                        data=docx_file,
+                        file_name=f"Mappa_Numerologica_{nome_cognome.replace(' ', '_')}.docx",
+                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    )
 
                 except Exception as e:
                     st.error(f"Si è verificato un errore: {e}")
