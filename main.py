@@ -4,6 +4,7 @@ import streamlit as st
 from openai import OpenAI
 from pypdf import PdfReader
 from docx import Document
+from collections import Counter
 
 # Configurazione pagina
 st.set_page_config(page_title="App di Numerologia Evolutiva", layout="centered")
@@ -36,7 +37,7 @@ def check_password():
             st.error("❌ Password errata!")
     return False
 
-# --- TABELLA PITAGORICA ESATTA (Guematria) ---
+# --- TABELLA PITAGORICA ESATTA E PIANI DELL'ESSERE (F.E.M.S.) ---
 TABELLA_PITAGORICA = {
     'a': 1, 'j': 1, 's': 1,
     'b': 2, 'k': 2, 't': 2,
@@ -47,6 +48,14 @@ TABELLA_PITAGORICA = {
     'g': 7, 'p': 7, 'y': 7,
     'h': 8, 'q': 8, 'z': 8,
     'i': 9, 'r': 9
+}
+
+# Mappatura dei Piani dell'Essere (Fisico, Emotivo, Mentale, Spirituale)
+PIANI_LETTERE = {
+    'Fisico': set(['d', 'm', 'v']),
+    'Emotivo': set(['b', 'e', 'k', 'n', 'o', 't', 'w', 'x']),
+    'Mentale': set(['a', 'c', 'g', 'j', 'l', 'p', 's', 'u', 'y']),
+    'Spirituale': set(['f', 'h', 'i', 'q', 'r', 'z'])
 }
 
 VOCALI_BASE = set(['a', 'e', 'i', 'o', 'u'])
@@ -66,9 +75,23 @@ def calcola_nome_cognome(testo):
     vocali_trovate = []
     consonanti_trovate = []
     
+    # Conteggio Piani dell'Essere (F.E.M.S.)
+    fems_count = {'Fisico': 0, 'Emotivo': 0, 'Mentale': 0, 'Spirituale': 0}
+    
+    # Conteggio frequenza singoli numeri (1-9) nel nome
+    frequenza_numeri = {i: 0 for i in range(1, 10)}
+    
     for char in testo_clean:
         if char in TABELLA_PITAGORICA:
             val = TABELLA_PITAGORICA[char]
+            frequenza_numeri[val] += 1
+            
+            # Piani dell'essere
+            for piano, lettere_set in PIANI_LETTERE.items():
+                if char in lettere_set:
+                    fems_count[piano] += 1
+                    break
+            
             if char in VOCALI_BASE or char == 'y':
                 vocali_trovate.append((char.upper(), val))
             else:
@@ -81,7 +104,9 @@ def calcola_nome_cognome(testo):
     return {
         "anima_tot": tot_v, "anima_rid": riduci(tot_v),
         "persona_tot": tot_c, "persona_rid": riduci(tot_c),
-        "io_tot": tot_io, "io_rid": riduci(tot_io)
+        "io_tot": tot_io, "io_rid": riduci(tot_io),
+        "fems_count": fems_count,
+        "frequenza_numeri": frequenza_numeri
     }
 
 def calcola_data_nascita(g, m, a):
@@ -90,6 +115,10 @@ def calcola_data_nascita(g, m, a):
     dest_rid = riduci(dest_tot)
     sole_tot = g + m
     sole_rid = riduci(sole_tot)
+    
+    # L'Età dell'Innesto è l'anno/età esatto derivante da Giorno + Mese
+    eta_innesto = g + m
+    
     origine_tot = sum(int(c) for c in str(a))
     origine_rid = riduci(origine_tot)
     dono_tot = int(str(a)[-2:])
@@ -103,20 +132,40 @@ def calcola_data_nascita(g, m, a):
     sfida_maturita = abs(m_s - g_s)
     sfida_principale = abs(sfida_maturita - sfida_infanzia)
     
+    # Conteggio cifre presenti nella data di nascita
+    cifre_data = [int(c) for c in f"{g}{m}{a}" if c.isdigit() and c != '0']
+    
     return {
         "dest_tot": dest_tot, "dest_rid": dest_rid,
         "approdo": g,
         "sole_tot": sole_tot, "sole_rid": sole_rid,
+        "eta_innesto": eta_innesto,
         "origine_rid": origine_rid,
         "dono_rid": dono_rid,
         "sfida_infanzia": sfida_infanzia,
         "sfida_maturita": sfida_maturita,
-        "sfida_principale": sfida_principale
+        "sfida_principale": sfida_principale,
+        "cifre_data": cifre_data
     }
+
+def calcola_lezioni_e_dominanti(freq_nome, cifre_data):
+    # Unisce le frequenze del nome con quelle della data
+    freq_totale = freq_nome.copy()
+    for c in cifre_data:
+        if c in freq_totale:
+            freq_totale[c] += 1
+            
+    # Lezioni Karmiche = numeri con frequenza 0
+    lezioni_karmiche = [num for num, count in freq_totale.items() if count == 0]
+    
+    # Archetipi Dominanti = numeri presenti 3 o più volte
+    archetipi_dominanti = [num for num, count in freq_totale.items() if count >= 3]
+    
+    return freq_totale, lezioni_karmiche, archetipi_dominanti
 
 def crea_documento_word(nome_soggetto, dati_sintesi, testo_analisi):
     doc = Document()
-    doc.add_heading(f"Mappa Numerologica Evolutiva", level=1)
+    doc.add_heading("Mappa Numerologica Evolutiva", level=1)
     doc.add_heading(f"Profilo di: {nome_soggetto}", level=2)
     
     doc.add_heading("Quadro Numerico", level=3)
@@ -134,7 +183,7 @@ def crea_documento_word(nome_soggetto, dati_sintesi, testo_analisi):
 
 if check_password():
     st.title("✨ Mappa Numerologica Evolutiva")
-    st.write("Analisi narrativa profonda, orientata alla professione, ai piani dell'essere e con esportazione in Word.")
+    st.write("Analisi narrativa della Scuola Numerica con calcolo nativo di Piani F.E.M.S., Lezioni Karmiche e Innesto.")
 
     api_key = st.secrets.get("OPENAI_API_KEY") or os.environ.get("OPENAI_API_KEY")
 
@@ -165,7 +214,7 @@ if check_password():
 
     if st.button("Genera Analisi Approfondita") and api_key:
         if nome_cognome and data_nascita:
-            with st.spinner("Elaborazione del profilo e preparazione del file in corso..."):
+            with st.spinner("Elaborazione matematica e stesura del profilo in corso..."):
                 try:
                     res_nc = calcola_nome_cognome(nome_cognome)
                     p = data_nascita.split("/")
@@ -174,7 +223,11 @@ if check_password():
                     q_tot = res_nc["io_tot"] + res_d["dest_tot"]
                     q_rid = riduci(q_tot)
                     
-                    # 1. MOSTRA QUADRO SINTETICO DEI RISULTATI
+                    freq_totale, lezioni_karmiche, archetipi_dominanti = calcola_lezioni_e_dominanti(
+                        res_nc["frequenza_numeri"], res_d["cifre_data"]
+                    )
+                    
+                    # 1. QUADRO SINTETICO
                     st.markdown("---")
                     st.subheader("📊 Mappa dei Numeri Fondamentali")
                     c1, c2, c3, c4, c5 = st.columns(5)
@@ -184,49 +237,83 @@ if check_password():
                     c4.metric("Destino (D)", f"{res_d['dest_tot']}/{res_d['dest_rid']}")
                     c5.metric("Quintessenza (Q)", f"{q_tot}/{q_rid}")
                     
-                    st.write(f"**Approdo (Giorno)**: {res_d['approdo']} | **Sole/Forza**: {res_d['sole_tot']}/{res_d['sole_rid']} (Innesto: {res_d['sole_tot']} anni) | **Origine**: {res_d['origine_rid']} | **Dono**: {res_d['dono_rid']}")
+                    st.write(f"**Approdo (Giorno)**: {res_d['approdo']} | **Numero del Sole**: {res_d['sole_tot']}/{res_d['sole_rid']}")
+                    st.write(f"📌 **Età dell'Innesto**: **{res_d['eta_innesto']} anni** *(Evento/Svolta chiave di vita)*")
+                    st.write(f"**Origine**: {res_d['origine_rid']} | **Dono**: {res_d['dono_rid']}")
                     st.write(f"**Sfide**: Infanzia {res_d['sfida_infanzia']} | Maturità {res_d['sfida_maturita']} | **Principale**: {res_d['sfida_principale']}")
+                    
+                    # Dettaglio Piani F.E.M.S.
+                    fems = res_nc["fems_count"]
+                    tot_lettere = sum(fems.values())
+                    st.markdown("#### 🌿 Piani dell'Essere (F.E.M.S.)")
+                    pf1, pf2, pf3, pf4 = st.columns(4)
+                    pf1.metric("Fisico (Terra)", f"{fems['Fisico']} lettere")
+                    pf2.metric("Emotivo (Acqua)", f"{fems['Emotivo']} lettere")
+                    pf3.metric("Mentale (Aria)", f"{fems['Mentale']} lettere")
+                    pf4.metric("Spirituale (Fuoco)", f"{fems['Spirituale']} lettere")
+                    
+                    # Dettaglio Karmico
+                    st.markdown("#### ⚖️ Lezioni Karmiche e Archetipi Dominanti")
+                    st.write(f"**Lezioni Karmiche (Numeri Mancanti)**: {', '.join(map(str, lezioni_karmiche)) if lezioni_karmiche else 'Nessuna (Tutti i numeri sono presenti)'}")
+                    st.write(f"**Archetipi Dominanti (Numeri in Eccesso)**: {', '.join(map(str, archetipi_dominanti)) if archetipi_dominanti else 'Nessuno (Distribuzione equilibrata)'}")
                     st.markdown("---")
 
                     report_matematico = f"""
-DATI NUMERICI ESATTI:
+DATI NUMERICI ESATTI E ANALISI STRUTTURALE:
 - Soggetto: {nome_cognome} ({data_nascita})
 - Anima: {res_nc['anima_tot']}/{res_nc['anima_rid']}
 - Persona: {res_nc['persona_tot']}/{res_nc['persona_rid']}
 - Io / Espressione: {res_nc['io_tot']}/{res_nc['io_rid']}
 - Destino / Cammino: {res_d['dest_tot']}/{res_d['dest_rid']}
 - Approdo: {res_d['approdo']}
-- Sole / Forza: {res_d['sole_tot']}/{res_d['sole_rid']} (Innesto: {res_d['sole_tot']} anni)
+- Numero del Sole: {res_d['sole_tot']}/{res_d['sole_rid']}
+- ETÀ DELL'INNESTO: {res_d['eta_innesto']} anni (Momento/fase temporale di imprinting o evento cruciale di vita)
 - Origine: {res_d['origine_rid']} | Dono: {res_d['dono_rid']}
-- Sotto-sfida Infanzia: {res_d['sfida_infanzia']}
-- Sotto-sfida Maturità: {res_d['sfida_maturita']}
-- Sfida Principale: {res_d['sfida_principale']}
+- Sfide: Infanzia {res_d['sfida_infanzia']}, Maturità {res_d['sfida_maturita']}, Principale {res_d['sfida_principale']}
 - Quintessenza: {q_tot}/{q_rid}
+
+CONTEGGIO PIANI DELL'ESSERE (F.E.M.S.):
+- Piano Fisico (Elemento Terra - Lettere D, M, V): {fems['Fisico']}
+- Piano Emotivo (Elemento Acqua - Lettere B, E, K, N, O, T, W, X): {fems['Emotivo']}
+- Piano Mentale (Elemento Aria - Lettere A, C, G, J, L, P, S, U, Y): {fems['Mentale']}
+- Piano Spirituale (Elemento Fuoco - Lettere F, H, I, Q, R, Z): {fems['Spirituale']}
+(Totale lettere analizzate: {tot_lettere})
+
+LEZIONI KARMICHE E ARCHETIPI DOMINANTI:
+- Frequenza totale delle cifre nella mappa: {freq_totale}
+- Lezioni Karmiche (Numeri MANCANTI o non presenti): {lezioni_karmiche}
+- Archetipi Dominanti (Numeri REITERATI o in ECCESSO): {archetipi_dominanti}
 """
 
                     prompt = f"""
-Sei un Maestro Numerologo saggio, colto e raffinato della Scuola Numerica. 
-Scrivi un profilo numerologico narrativo molto ampio, ricco, fluido ed elegante in LINGUA ITALIANA CORRETTA E IMPECCABILE. 
+Sei un Maestro Numerologo raffinato, colto e saggio della Scuola Numerica.
+Scrivi un'analisi narrativa molto ampia, ricca, elegante e priva di qualsiasi errore grammaticale in LINGUA ITALIANA IMPECCABILE.
 
-REGOLE DI SCRITTURA RIGIDE:
-1. CURA DELLA LINGUA: Scrivi esclusivamente in italiano formale e corretto. Evita in modo assoluto termini errati come "pianoforte" (usa esclusivamente "piano fisico", "piano emotivo", "piano mentale", "piano spirituale"). Non duplicare mai parole o sillabe.
-2. AMPIEZZA DESCRITTIVA: Crea sezioni ampie, avvolgenti e dettagliate, senza elenchi puntati freddi. 
-3. INCLINAZIONI PRATICHE E PROFESSIONALI: Spiega in modo approfondito ed esteso **cosa la persona è portata a fare nella vita pratica e professionale** in base ai suoi numeri chiave (in particolare per il Destino e l'Io), collegando l'energia del numero a sbocchi concreti (es. gestione, organizzazione e metodo per il 4; leadership o impresa per l'8; relazioni, empatia e mediazione per il 2; altruismo, educazione o sociale per il 9; ecc.).
-4. PIANI DELL'ESSERE: Inserisci un capitolo dedicato ai **Piani dell'Essere e agli Elementi (F.E.M.S.)** spiegando con precisione la distribuzione e l'influenza dei piani fisico, emotivo, mentale e spirituale.
-
-DATI DI RIFERIMENTO:
+DATI DI RIFERIMENTO E MATEMATICA:
 {report_matematico}
 
-DISPENSA DI RIFERIMENTO:
+DISPENSA PDF:
 {pdf_text}
 
-STRUTTURA DEI CAPITOLI RICHIESTA:
-- 🌅 **L'Ingresso nel Viaggio e l'Approdo**: Ampia riflessione sull'incarnazione di {nome_cognome} ({data_nascita}) e sul profondo significato alchemico del giorno di Approdo ({res_d['approdo']}).
-- 🎶 **La Sinfonia del Nome: Anima, Persona e Io**: Analisi estesa del desiderio del cuore (Anima: {res_nc['anima_tot']}/{res_nc['anima_rid']}), dello scudo relazionale (Persona: {res_nc['persona_tot']}/{res_nc['persona_rid']}) e dei talenti operativi e professionali messi in campo dall'Io ({res_nc['io_tot']}/{res_nc['io_rid']}).
-- 🌱 **Il Cammino dei Talenti e della Professione**: Trattazione ampia e dettagliata del Destino ({res_d['dest_tot']}/{res_d['dest_rid']}), esaminando approfonditamente le inclinazioni pratiche, le vocazioni lavorative e i contesti in cui la persona esprime al meglio il proprio potenziale. Approfondisci anche la Forza del Sole ({res_d['sole_tot']}/{res_d['sole_rid']}) con l'Innesto a {res_d['sole_tot']} anni, l'Origine e il Dono.
-- 🌿 **I Piani dell'Essere e gli Elementi (F.E.M.S.)**: Trattazione dedicata dei piani energetici (Fisico/Terra, Emotivo/Acqua, Mentale/Aria, Spirituale/Fuoco) presenti nella struttura del nome.
-- 🌑 **Il Cammino delle Sfide e dell'Ombra**: Analisi evolutiva della Sotto-sfida d'infanzia ({res_d['sfida_infanzia']}), di maturità ({res_d['sfida_maturita']}) e della Sfida Principale ({res_d['sfida_principale']}), viste come il "seme del proprio superamento".
-- 🔮 **La Quintessenza e la Croce Cardinale**: Conclusione ampia e poetica incentrata sul centro d'equilibrio ({q_tot}/{q_rid}) e sul compimento della missione dell'Anima.
+ISTRUZIONI DI CONTENUTO E REGOLE METODOLOGICHE RIGIDE:
+1. CURA FORMALE: Italiano impeccabile. Evita termini storpiati o errati (usa esclusivamente "piano fisico", "piano emotivo", "piano mentale", "piano spirituale"). Non duplicare parole.
+2. DISTINZIONE SOLE vs INNESTO: 
+   - Interpreta il Numero del Sole ({res_d['sole_tot']}/{res_d['sole_rid']}) secondo il suo significato numerologico.
+   - Tratta l'Età dell'Innesto ({res_d['eta_innesto']} anni) ESCLUSIVAMENTE come una constatazione temporale: un'età chiave a ridosso della quale accade quasi sempre un evento o un imprinting fondamentale che imprime una precisa direzione alla vita, SENZA applicare ad essa un'interpretazione numerologica.
+3. CAMMINO DEI TALENTI E VOCAZIONE PRATICA (SEZIONE AMPIA): Dedica un'ampia trattazione al Destino ({res_d['dest_tot']}/{res_d['dest_rid']}) e all'Io ({res_nc['io_tot']}/{res_nc['io_rid']}), spiegando in modo dettagliato **cosa la persona è portata a fare nella vita pratica e professionale** (attitudini operative, lavorative, gestionali, creative, umane o tecniche)[cite: 3].
+4. PIANI DELL'ESSERE (F.E.M.S.): Analizza i dati numerici dei 4 Piani (Fisico={fems['Fisico']}, Emotivo={fems['Emotivo']}, Mentale={fems['Mentale']}, Spirituale={fems['Spirituale']}), spiegando la presenza/assenza o la prevalenza degli elementi (Terra, Acqua, Aria, Fuoco)[cite: 3].
+5. LEZIONI KARMICHE E ARCHETIPI DOMINANTI: Crea una sezione dedicata che richiami la dispensa su questa materia:
+   - Spiega il significato delle Lezioni Karmiche relative ai numeri MANCANTI ({lezioni_karmiche}) come esperienze di apprendimento non ancora integrate[cite: 3].
+   - Spiega il significato degli Archetipi Dominanti relativi ai numeri IN ECCESSO ({archetipi_dominanti}) come talenti forti o possibili tendenze all'eccesso[cite: 3].
+
+STRUTTURA DEI CAPITOLI:
+- 🌅 **L'Ingresso nel Viaggio e l'Approdo**: Riflessione sull'incarnazione di {nome_cognome} ({data_nascita}) e sul giorno di Approdo ({res_d['approdo']})[cite: 3].
+- 🎶 **La Sinfonia del Nome: Anima, Persona e Io**: Anima ({res_nc['anima_tot']}/{res_nc['anima_rid']}), Persona ({res_nc['persona_tot']}/{res_nc['persona_rid']}) e i mezzi d'azione dell'Io ({res_nc['io_tot']}/{res_nc['io_rid']})[cite: 3].
+- 🌱 **Il Cammino dei Talenti e della Professione**: Trattazione ampia e approfondita delle inclinazioni pratiche e lavorative del Destino ({res_d['dest_tot']}/{res_d['dest_rid']}), del Numero del Sole ({res_d['sole_tot']}/{res_d['sole_rid']}) e nota sull'Età dell'Innesto a {res_d['eta_innesto']} anni[cite: 3].
+- 🌿 **I Piani dell'Essere e gli Elementi (F.E.M.S.)**: Analisi dettagliata dei conteggi sui Piani Fisico, Emotivo, Mentale e Spirituale[cite: 3].
+- ⚖️ **Lezioni Karmiche e Archetipi Dominanti**: Analisi dei numeri mancanti e di quelli in eccesso[cite: 3].
+- 🌑 **Il Cammino delle Sfide e dell'Ombra**: Le sotto-sfide e la Sfida Principale come "seme del proprio superamento"[cite: 3].
+- 🔮 **La Quintessenza e la Croce Cardinale**: Sintesi d'equilibrio ({q_tot}/{q_rid}) e missione d'Anima[cite: 3].
 """
 
                     response = client.chat.completions.create(
@@ -240,7 +327,7 @@ STRUTTURA DEI CAPITOLI RICHIESTA:
                     st.subheader("📖 Profilo Numerologico Narrativo ed Evolutivo")
                     st.markdown(testo_generato)
 
-                    # --- AGGIUNTA DEL PULSANTE DI DOWNLOAD WORD ---
+                    # --- PULSANTE DOWNLOAD WORD ---
                     st.markdown("---")
                     st.subheader("💾 Esporta la Mappa")
                     
