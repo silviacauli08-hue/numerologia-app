@@ -4,7 +4,6 @@ import streamlit as st
 from openai import OpenAI
 from pypdf import PdfReader
 from docx import Document
-from collections import Counter
 
 # Configurazione pagina
 st.set_page_config(page_title="App di Numerologia Evolutiva", layout="centered")
@@ -37,7 +36,7 @@ def check_password():
             st.error("❌ Password errata!")
     return False
 
-# --- TABELLA PITAGORICA ESATTA E PIANI DELL'ESSERE (F.E.M.S.) ---
+# --- TABELLA PITAGORICA ESATTA ---
 TABELLA_PITAGORICA = {
     'a': 1, 'j': 1, 's': 1,
     'b': 2, 'k': 2, 't': 2,
@@ -48,14 +47,6 @@ TABELLA_PITAGORICA = {
     'g': 7, 'p': 7, 'y': 7,
     'h': 8, 'q': 8, 'z': 8,
     'i': 9, 'r': 9
-}
-
-# Mappatura dei Piani dell'Essere (Fisico, Emotivo, Mentale, Spirituale)
-PIANI_LETTERE = {
-    'Fisico': set(['d', 'm', 'v']),
-    'Emotivo': set(['b', 'e', 'k', 'n', 'o', 't', 'w', 'x']),
-    'Mentale': set(['a', 'c', 'g', 'j', 'l', 'p', 's', 'u', 'y']),
-    'Spirituale': set(['f', 'h', 'i', 'q', 'r', 'z'])
 }
 
 VOCALI_BASE = set(['a', 'e', 'i', 'o', 'u'])
@@ -70,15 +61,29 @@ def riduci_singola(n):
         n = sum(int(c) for c in str(n))
     return n
 
+def calcola_segno_zodiacale(g, m):
+    g, m = int(g), int(m)
+    if (m == 3 and g >= 21) or (m == 4 and g <= 20): return "Ariete (Fuoco)"
+    if (m == 4 and g >= 21) or (m == 5 and g <= 20): return "Toro (Terra)"
+    if (m == 5 and g >= 21) or (m == 6 and g <= 21): return "Gemelli (Aria)"
+    if (m == 6 and g >= 22) or (m == 7 and g <= 22): return "Cancro (Acqua)"
+    if (m == 7 and g >= 23) or (m == 8 and g <= 23): return "Leone (Fuoco)"
+    if (m == 8 and g >= 24) or (m == 9 and g <= 22): return "Vergine (Terra)"
+    if (m == 9 and g >= 23) or (m == 10 and g <= 22): return "Bilancia (Aria)"
+    if (m == 10 and g >= 23) or (m == 11 and g <= 21): return "Scorpione (Acqua)"
+    if (m == 11 and g >= 22) or (m == 12 and g <= 21): return "Sagittario (Fuoco)"
+    if (m == 12 and g >= 22) or (m == 1 and g <= 20): return "Capricorno (Terra)"
+    if (m == 1 and g >= 21) or (m == 2 and g <= 19): return "Acquario (Aria)"
+    if (m == 2 and g >= 20) or (m == 3 and g <= 20): return "Pesci (Acqua)"
+    return "Non definito"
+
 def calcola_nome_cognome(testo):
     testo_clean = testo.lower()
     vocali_trovate = []
     consonanti_trovate = []
     
-    # Conteggio Piani dell'Essere (F.E.M.S.)
+    # Conteggio Piani dell'Essere (F.E.M.S.) basato sui numeri pitagorici
     fems_count = {'Fisico': 0, 'Emotivo': 0, 'Mentale': 0, 'Spirituale': 0}
-    
-    # Conteggio frequenza singoli numeri (1-9) nel nome
     frequenza_numeri = {i: 0 for i in range(1, 10)}
     
     for char in testo_clean:
@@ -86,11 +91,15 @@ def calcola_nome_cognome(testo):
             val = TABELLA_PITAGORICA[char]
             frequenza_numeri[val] += 1
             
-            # Piani dell'essere
-            for piano, lettere_set in PIANI_LETTERE.items():
-                if char in lettere_set:
-                    fems_count[piano] += 1
-                    break
+            # Assegnazione corretta ai piani in base al valore numerico pitagorico
+            if val in [1, 5]:
+                fems_count['Mentale'] += 1
+            elif val in [2, 3, 6, 9]:
+                fems_count['Emotivo'] += 1
+            elif val in [4, 8]:
+                fems_count['Fisico'] += 1
+            elif val == 7:
+                fems_count['Spirituale'] += 1
             
             if char in VOCALI_BASE or char == 'y':
                 vocali_trovate.append((char.upper(), val))
@@ -115,8 +124,6 @@ def calcola_data_nascita(g, m, a):
     dest_rid = riduci(dest_tot)
     sole_tot = g + m
     sole_rid = riduci(sole_tot)
-    
-    # L'Età dell'Innesto è l'anno/età esatto derivante da Giorno + Mese
     eta_innesto = g + m
     
     origine_tot = sum(int(c) for c in str(a))
@@ -132,7 +139,6 @@ def calcola_data_nascita(g, m, a):
     sfida_maturita = abs(m_s - g_s)
     sfida_principale = abs(sfida_maturita - sfida_infanzia)
     
-    # Conteggio cifre presenti nella data di nascita
     cifre_data = [int(c) for c in f"{g}{m}{a}" if c.isdigit() and c != '0']
     
     return {
@@ -148,17 +154,20 @@ def calcola_data_nascita(g, m, a):
         "cifre_data": cifre_data
     }
 
-def calcola_lezioni_e_dominanti(freq_nome, cifre_data):
-    # Unisce le frequenze del nome con quelle della data
+def calcola_lezioni_e_dominanti(freq_nome, cifre_data, numeri_sintesi):
     freq_totale = freq_nome.copy()
     for c in cifre_data:
         if c in freq_totale:
             freq_totale[c] += 1
             
-    # Lezioni Karmiche = numeri con frequenza 0
-    lezioni_karmiche = [num for num, count in freq_totale.items() if count == 0]
+    numeri_sintesi_set = set(numeri_sintesi)
     
-    # Archetipi Dominanti = numeri presenti 3 o più volte
+    # Lezioni Karmiche: numeri a frequenza 0 che NON compaiono nei numeri di sintesi (Croce Cardinale)
+    lezioni_karmiche = [
+        num for num, count in freq_totale.items() 
+        if count == 0 and num not in numeri_sintesi_set
+    ]
+    
     archetipi_dominanti = [num for num, count in freq_totale.items() if count >= 3]
     
     return freq_totale, lezioni_karmiche, archetipi_dominanti
@@ -183,7 +192,7 @@ def crea_documento_word(nome_soggetto, dati_sintesi, testo_analisi):
 
 if check_password():
     st.title("✨ Mappa Numerologica Evolutiva")
-    st.write("Analisi narrativa della Scuola Numerica con calcolo nativo di Piani F.E.M.S., Lezioni Karmiche e Innesto.")
+    st.write("Analisi narrativa con Piani F.E.M.S., Segno Zodiacale e Lezioni Karmiche corrette.")
 
     api_key = st.secrets.get("OPENAI_API_KEY") or os.environ.get("OPENAI_API_KEY")
 
@@ -223,8 +232,20 @@ if check_password():
                     q_tot = res_nc["io_tot"] + res_d["dest_tot"]
                     q_rid = riduci(q_tot)
                     
+                    segno_zodiacale = calcola_segno_zodiacale(p[0], p[1])
+                    
+                    numeri_cardinali = [
+                        res_nc['anima_rid'], 
+                        res_nc['persona_rid'], 
+                        res_nc['io_rid'], 
+                        res_d['dest_rid'], 
+                        q_rid
+                    ]
+                    
                     freq_totale, lezioni_karmiche, archetipi_dominanti = calcola_lezioni_e_dominanti(
-                        res_nc["frequenza_numeri"], res_d["cifre_data"]
+                        res_nc["frequenza_numeri"], 
+                        res_d["cifre_data"],
+                        numeri_cardinali
                     )
                     
                     # 1. QUADRO SINTETICO
@@ -237,8 +258,8 @@ if check_password():
                     c4.metric("Destino (D)", f"{res_d['dest_tot']}/{res_d['dest_rid']}")
                     c5.metric("Quintessenza (Q)", f"{q_tot}/{q_rid}")
                     
-                    st.write(f"**Approdo (Giorno)**: {res_d['approdo']} | **Numero del Sole**: {res_d['sole_tot']}/{res_d['sole_rid']}")
-                    st.write(f"📌 **Età dell'Innesto**: **{res_d['eta_innesto']} anni** *(Evento/Svolta chiave di vita)*")
+                    st.write(f"🌟 **Segno Zodiacale**: **{segno_zodiacale}** | **Approdo (Giorno)**: {res_d['approdo']} | **Numero del Sole**: {res_d['sole_tot']}/{res_d['sole_rid']}")
+                    st.write(f"📌 **Età dell'Innesto**: **{res_d['eta_innesto']} anni** *(Fase temporale chiave di imprinting e svolta di vita)*")
                     st.write(f"**Origine**: {res_d['origine_rid']} | **Dono**: {res_d['dono_rid']}")
                     st.write(f"**Sfide**: Infanzia {res_d['sfida_infanzia']} | Maturità {res_d['sfida_maturita']} | **Principale**: {res_d['sfida_principale']}")
                     
@@ -247,42 +268,42 @@ if check_password():
                     tot_lettere = sum(fems.values())
                     st.markdown("#### 🌿 Piani dell'Essere (F.E.M.S.)")
                     pf1, pf2, pf3, pf4 = st.columns(4)
-                    pf1.metric("Fisico (Terra)", f"{fems['Fisico']} lettere")
-                    pf2.metric("Emotivo (Acqua)", f"{fems['Emotivo']} lettere")
-                    pf3.metric("Mentale (Aria)", f"{fems['Mentale']} lettere")
-                    pf4.metric("Spirituale (Fuoco)", f"{fems['Spirituale']} lettere")
+                    pf1.metric("Fisico (4, 8)", f"{fems['Fisico']} lettere")
+                    pf2.metric("Emotivo (2,3,6,9)", f"{fems['Emotivo']} lettere")
+                    pf3.metric("Mentale (1, 5)", f"{fems['Mentale']} lettere")
+                    pf4.metric("Spirituale (7)", f"{fems['Spirituale']} lettere")
                     
                     # Dettaglio Karmico
                     st.markdown("#### ⚖️ Lezioni Karmiche e Archetipi Dominanti")
-                    st.write(f"**Lezioni Karmiche (Numeri Mancanti)**: {', '.join(map(str, lezioni_karmiche)) if lezioni_karmiche else 'Nessuna (Tutti i numeri sono presenti)'}")
-                    st.write(f"**Archetipi Dominanti (Numeri in Eccesso)**: {', '.join(map(str, archetipi_dominanti)) if archetipi_dominanti else 'Nessuno (Distribuzione equilibrata)'}")
+                    st.write(f"**Lezioni Karmiche (Numeri Mancanti reali)**: {', '.join(map(str, lezioni_karmiche)) if lezioni_karmiche else 'Nessuna'}")
+                    st.write(f"**Archetipi Dominanti (Numeri in Eccesso $\ge 3$ volte)**: {', '.join(map(str, archetipi_dominanti)) if archetipi_dominanti else 'Nessuno'}")
                     st.markdown("---")
 
                     report_matematico = f"""
 DATI NUMERICI ESATTI E ANALISI STRUTTURALE:
-- Soggetto: {nome_cognome} ({data_nascita})
+- Soggetto: {nome_cognome} (Data di nascita: {data_nascita})
+- Segno Zodiacale: {segno_zodiacale}
 - Anima: {res_nc['anima_tot']}/{res_nc['anima_rid']}
 - Persona: {res_nc['persona_tot']}/{res_nc['persona_rid']}
 - Io / Espressione: {res_nc['io_tot']}/{res_nc['io_rid']}
 - Destino / Cammino: {res_d['dest_tot']}/{res_d['dest_rid']}
 - Approdo: {res_d['approdo']}
 - Numero del Sole: {res_d['sole_tot']}/{res_d['sole_rid']}
-- ETÀ DELL'INNESTO: {res_d['eta_innesto']} anni (Momento/fase temporale di imprinting o evento cruciale di vita)
+- ETÀ DELL'INNESTO: {res_d['eta_innesto']} anni (Fase temporale di imprinting o evento cruciale, senza interpretazione numerologica dell'età stessa)
 - Origine: {res_d['origine_rid']} | Dono: {res_d['dono_rid']}
 - Sfide: Infanzia {res_d['sfida_infanzia']}, Maturità {res_d['sfida_maturita']}, Principale {res_d['sfida_principale']}
 - Quintessenza: {q_tot}/{q_rid}
 
-CONTEGGIO PIANI DELL'ESSERE (F.E.M.S.):
-- Piano Fisico (Elemento Terra - Lettere D, M, V): {fems['Fisico']}
-- Piano Emotivo (Elemento Acqua - Lettere B, E, K, N, O, T, W, X): {fems['Emotivo']}
-- Piano Mentale (Elemento Aria - Lettere A, C, G, J, L, P, S, U, Y): {fems['Mentale']}
-- Piano Spirituale (Elemento Fuoco - Lettere F, H, I, Q, R, Z): {fems['Spirituale']}
-(Totale lettere analizzate: {tot_lettere})
+CONTEGGIO CORRETTO PIANI DELL'ESSERE (F.E.M.S. via valori pitagorici):
+- Piano Fisico (Numeri 4 e 8): {fems['Fisico']} lettere
+- Piano Emotivo (Numeri 2, 3, 6, 9): {fems['Emotivo']} lettere
+- Piano Mentale (Numeri 1 e 5): {fems['Mentale']} lettere
+- Piano Spirituale (Numero 7): {fems['Spirituale']} lettere
+(Totale lettere del nome analizzate: {tot_lettere})
 
 LEZIONI KARMICHE E ARCHETIPI DOMINANTI:
-- Frequenza totale delle cifre nella mappa: {freq_totale}
-- Lezioni Karmiche (Numeri MANCANTI o non presenti): {lezioni_karmiche}
-- Archetipi Dominanti (Numeri REITERATI o in ECCESSO): {archetipi_dominanti}
+- Lezioni Karmiche (Numeri davvero mancanti anche fuori dalla Croce Cardinale): {lezioni_karmiche}
+- Archetipi Dominanti (Numeri reiterati 3 o più volte): {archetipi_dominanti}
 """
 
                     prompt = f"""
@@ -296,24 +317,25 @@ DISPENSA PDF:
 {pdf_text}
 
 ISTRUZIONI DI CONTENUTO E REGOLE METODOLOGICHE RIGIDE:
-1. CURA FORMALE: Italiano impeccabile. Evita termini storpiati o errati (usa esclusivamente "piano fisico", "piano emotivo", "piano mentale", "piano spirituale"). Non duplicare parole.
-2. DISTINZIONE SOLE vs INNESTO: 
+1. CURA FORMALE: Italiano impeccabile. Utilizza esclusivamente i termini corretti ("piano fisico", "piano emotivo", "piano mentale", "piano spirituale"). Non usare mai espressioni scorrette come "pianoforte". Non duplicare parole.
+2. SEGNO ZODIACALE: Integra il segno zodiacale ({segno_zodiacale}) all'inizio dell'analisi per arricchire il quadro di partenza dell'anima incarnata.
+3. DISTINZIONE SOLE vs INNESTO: 
    - Interpreta il Numero del Sole ({res_d['sole_tot']}/{res_d['sole_rid']}) secondo il suo significato numerologico.
-   - Tratta l'Età dell'Innesto ({res_d['eta_innesto']} anni) ESCLUSIVAMENTE come una constatazione temporale: un'età chiave a ridosso della quale accade quasi sempre un evento o un imprinting fondamentale che imprime una precisa direzione alla vita, SENZA applicare ad essa un'interpretazione numerologica.
-3. CAMMINO DEI TALENTI E VOCAZIONE PRATICA (SEZIONE AMPIA): Dedica un'ampia trattazione al Destino ({res_d['dest_tot']}/{res_d['dest_rid']}) e all'Io ({res_nc['io_tot']}/{res_nc['io_rid']}), spiegando in modo dettagliato **cosa la persona è portata a fare nella vita pratica e professionale** (attitudini operative, lavorative, gestionali, creative, umane o tecniche)[cite: 3].
-4. PIANI DELL'ESSERE (F.E.M.S.): Analizza i dati numerici dei 4 Piani (Fisico={fems['Fisico']}, Emotivo={fems['Emotivo']}, Mentale={fems['Mentale']}, Spirituale={fems['Spirituale']}), spiegando la presenza/assenza o la prevalenza degli elementi (Terra, Acqua, Aria, Fuoco)[cite: 3].
-5. LEZIONI KARMICHE E ARCHETIPI DOMINANTI: Crea una sezione dedicata che richiami la dispensa su questa materia:
-   - Spiega il significato delle Lezioni Karmiche relative ai numeri MANCANTI ({lezioni_karmiche}) come esperienze di apprendimento non ancora integrate[cite: 3].
-   - Spiega il significato degli Archetipi Dominanti relativi ai numeri IN ECCESSO ({archetipi_dominanti}) come talenti forti o possibili tendenze all'eccesso[cite: 3].
+   - Tratta l'Età dell'Innesto ({res_d['eta_innesto']} anni) ESCLUSIVAMENTE come una constatazione temporale di svolta/imprinting vitale, SENZA applicare interpretazioni numerologiche all'età in sé.
+4. CAMMINO DEI TALENTI E VOCAZIONE PRATICA: Dedica un'ampia trattazione al Destino ({res_d['dest_tot']}/{res_d['dest_rid']}) e all'Io ({res_nc['io_tot']}/{res_nc['io_rid']}), spiegando in modo dettagliato cosa la persona è portata a fare nella vita pratica e professionale.
+5. PIANI DELL'ESSERE (F.E.M.S.): Spiega nel dettaglio la distribuzione dei piani (Fisico={fems['Fisico']}, Emotivo={fems['Emotivo']}, Mentale={fems['Mentale']}, Spirituale={fems['Spirituale']}) in base ai conteggi calcolati.
+6. LEZIONI KARMICHE E ARCHETIPI DOMINANTI: Dedica una sezione specifica:
+   - Spiega le Lezioni Karmiche ({lezioni_karmiche}) come lezioni o aree di esperienza non ancora integrate.
+   - Spiega gli Archetipi Dominanti ({archetipi_dominanti}) come talenti forti o potenziali eccessi energetici.
 
 STRUTTURA DEI CAPITOLI:
-- 🌅 **L'Ingresso nel Viaggio e l'Approdo**: Riflessione sull'incarnazione di {nome_cognome} ({data_nascita}) e sul giorno di Approdo ({res_d['approdo']})[cite: 3].
-- 🎶 **La Sinfonia del Nome: Anima, Persona e Io**: Anima ({res_nc['anima_tot']}/{res_nc['anima_rid']}), Persona ({res_nc['persona_tot']}/{res_nc['persona_rid']}) e i mezzi d'azione dell'Io ({res_nc['io_tot']}/{res_nc['io_rid']})[cite: 3].
-- 🌱 **Il Cammino dei Talenti e della Professione**: Trattazione ampia e approfondita delle inclinazioni pratiche e lavorative del Destino ({res_d['dest_tot']}/{res_d['dest_rid']}), del Numero del Sole ({res_d['sole_tot']}/{res_d['sole_rid']}) e nota sull'Età dell'Innesto a {res_d['eta_innesto']} anni[cite: 3].
-- 🌿 **I Piani dell'Essere e gli Elementi (F.E.M.S.)**: Analisi dettagliata dei conteggi sui Piani Fisico, Emotivo, Mentale e Spirituale[cite: 3].
-- ⚖️ **Lezioni Karmiche e Archetipi Dominanti**: Analisi dei numeri mancanti e di quelli in eccesso[cite: 3].
-- 🌑 **Il Cammino delle Sfide e dell'Ombra**: Le sotto-sfide e la Sfida Principale come "seme del proprio superamento"[cite: 3].
-- 🔮 **La Quintessenza e la Croce Cardinale**: Sintesi d'equilibrio ({q_tot}/{q_rid}) e missione d'Anima[cite: 3].
+- 🌅 **L'Ingresso nel Viaggio, lo Zodiaco e l'Approdo**: Riflessione sull'incarnazione di {nome_cognome} ({data_nascita}), il segno zodiacale ({segno_zodiacale}) e il giorno di Approdo ({res_d['approdo']}).
+- 🎶 **La Sinfonia del Nome: Anima, Persona e Io**: Anima ({res_nc['anima_tot']}/{res_nc['anima_rid']}), Persona ({res_nc['persona_tot']}/{res_nc['persona_rid']}) e i mezzi d'azione dell'Io ({res_nc['io_tot']}/{res_nc['io_rid']}).
+- 🌱 **Il Cammino dei Talenti e della Professione**: Trattazione ampia delle inclinazioni pratiche del Destino ({res_d['dest_tot']}/{res_d['dest_rid']}), del Numero del Sole ({res_d['sole_tot']}/{res_d['sole_rid']}) e della nota cronologica sull'Età dell'Innesto a {res_d['eta_innesto']} anni.
+- 🌿 **I Piani dell'Essere (F.E.M.S.)**: Analisi della struttura energetica tra piano Fisico, Emotivo, Mentale e Spirituale.
+- ⚖️ **Lezioni Karmiche e Archetipi Dominanti**: Approfondimento dei numeri mancanti ({lezioni_karmiche}) e dominanti ({archetipi_dominanti}).
+- 🌑 **Il Cammino delle Sfide e dell'Ombra**: Le sotto-sfide e la Sfida Principale come semi di superamento.
+- 🔮 **La Quintessenza e la Croce Cardinale**: Sintesi d'equilibrio ({q_tot}/{q_rid}) e missione d'Anima.
 """
 
                     response = client.chat.completions.create(
